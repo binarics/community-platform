@@ -17,10 +17,30 @@ export async function POST(
     const body = await request.json()
     const { reviewNotes } = body
 
-    if (!reviewNotes) {
-      return NextResponse.json({ error: 'Reason for rejection required' }, { status: 400 })
+    if (!reviewNotes || reviewNotes.trim().length < 10) {
+      return NextResponse.json(
+        { error: 'Please provide a reason for rejection (at least 10 characters)' },
+        { status: 400 }
+      )
     }
 
+    // Get the role request
+    const roleRequest = await prisma.roleRequest.findUnique({
+      where: { id: params.id },
+    })
+
+    if (!roleRequest) {
+      return NextResponse.json({ error: 'Request not found' }, { status: 404 })
+    }
+
+    if (roleRequest.status !== 'PENDING') {
+      return NextResponse.json(
+        { error: 'Request already reviewed' },
+        { status: 400 }
+      )
+    }
+
+    // Update role request
     await prisma.roleRequest.update({
       where: { id: params.id },
       data: {
@@ -31,9 +51,14 @@ export async function POST(
       },
     })
 
-    return NextResponse.json({ message: 'Role request rejected' })
+    return NextResponse.json({
+      message: 'Role request rejected',
+    })
   } catch (error) {
-    console.error('Reject error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Reject role request error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
   }
 }

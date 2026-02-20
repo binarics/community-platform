@@ -17,37 +17,48 @@ export async function POST(
     const body = await request.json()
     const { reviewNotes } = body
 
+    // Get the role request
     const roleRequest = await prisma.roleRequest.findUnique({
       where: { id: params.id },
       include: { user: true },
     })
 
     if (!roleRequest) {
-      return NextResponse.json({ error: 'Role request not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Request not found' }, { status: 404 })
     }
 
     if (roleRequest.status !== 'PENDING') {
-      return NextResponse.json({ error: 'Request already reviewed' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Request already reviewed' },
+        { status: 400 }
+      )
     }
 
-    await prisma.user.update({
-      where: { id: roleRequest.userId },
-      data: { role: roleRequest.requestedRole },
-    })
-
+    // Update role request
     await prisma.roleRequest.update({
       where: { id: params.id },
       data: {
         status: 'APPROVED',
         reviewedBy: session.user.id,
         reviewedAt: new Date(),
-        reviewNotes,
+        reviewNotes: reviewNotes || null,
       },
     })
 
-    return NextResponse.json({ message: 'Role request approved' })
+    // Update user role
+    await prisma.user.update({
+      where: { id: roleRequest.userId },
+      data: { role: roleRequest.requestedRole },
+    })
+
+    return NextResponse.json({
+      message: 'Role request approved successfully',
+    })
   } catch (error) {
-    console.error('Approve error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Approve role request error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
   }
 }

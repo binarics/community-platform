@@ -1,15 +1,30 @@
 import { NextResponse } from 'next/server'
-import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
+import bcrypt from 'bcryptjs'
 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { email, password, name } = body
+    const { name, email, password } = body
 
-    if (!email || !password || !name) {
+    // Validation
+    if (!name || !email || !password) {
       return NextResponse.json(
         { error: 'Missing required fields' },
+        { status: 400 }
+      )
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json(
+        { error: 'Invalid email format' },
+        { status: 400 }
+      )
+    }
+
+    if (password.length < 8) {
+      return NextResponse.json(
+        { error: 'Password must be at least 8 characters' },
         { status: 400 }
       )
     }
@@ -32,20 +47,20 @@ export async function POST(request: Request) {
     // Create user
     const user = await prisma.user.create({
       data: {
+        name,
         email,
         password: hashedPassword,
-        name,
         role: 'COMMUNITY_MEMBER',
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
       },
     })
 
-    return NextResponse.json({
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-      },
-    })
+    return NextResponse.json({ user, message: 'Account created successfully' })
   } catch (error) {
     console.error('Registration error:', error)
     return NextResponse.json(

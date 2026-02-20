@@ -47,25 +47,29 @@ export default async function CalendarPage({ searchParams }: {
     },
   })
 
-  // Get all clients for quick booking
-  const clients = await prisma.user.findMany({
+  // Get all clients assigned to this counsellor (FIXED: Now shows ALL assigned clients)
+  const clientRelations = await prisma.clientCounsellor.findMany({
     where: {
-      role: 'CLIENT',
-      clientBookings: {
-        some: {
-          counsellorId: profile?.id,
+      counsellorId: profile?.id,
+      isActive: true,
+    },
+    include: {
+      client: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
         },
       },
     },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-    },
     orderBy: {
-      name: 'asc',
+      client: {
+        name: 'asc',
+      },
     },
   })
+
+  const clients = clientRelations.map(rel => rel.client)
 
   // Get all rooms for quick booking
   const rooms = await prisma.room.findMany({

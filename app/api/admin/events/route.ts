@@ -12,50 +12,102 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
+    const {
+      title,
+      slug,
+      description,
+      category,
+      masjidId,
+      organiserId,
+      startDate,
+      endDate,
+      startTime,
+      endTime,
+      location,
+      requiresRSVP,
+      maxAttendees,
+      isPublic,
+      status,
+    } = body
 
-    // Check if user can create events for this masjid
-    const canCreate = session.user.role === 'SUPER_ADMIN' ||
-      await prisma.masjidAdmin.findFirst({
-        where: {
-          masjidId: body.masjidId,
-          userId: session.user.id,
-        },
-      }) ||
-      await prisma.masjidModerator.findFirst({
-        where: {
-          masjidId: body.masjidId,
-          userId: session.user.id,
-        },
-      })
-
-    if (!canCreate) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    // Validation
+    if (!title || !masjidId || !organiserId || !startDate) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      )
     }
 
-    const event = await prisma.event.create({
-      data: {
-        title: body.title,
-        slug: body.slug,
-        description: body.description,
-        category: body.category,
-        startDate: body.startDate,
-        endDate: body.endDate,
-        startTime: body.startTime,
-        endTime: body.endTime,
-        location: body.location,
-        masjidId: body.masjidId,
-        organiserId: body.organiserId,
-        requiresRSVP: body.requiresRSVP,
-        maxAttendees: body.maxAttendees,
-        isPublic: body.isPublic,
-        status: body.status,
-        publishedAt: body.status === 'PUBLISHED' ? new Date() : null,
+    // Check if slug already exists
+    if (slug) {
+      const existingEvent = await prisma.event.findUnique({
+        where: { slug },
+      })
+
+      if (existingEvent) {
+        return NextResponse.json(
+          { error: 'An event with this URL already exists' },
+          { status: 400 }
+        )
+      }
+    }
+
+    // Verify user has permission to create events for this masjid
+    const isSuperAdmin = session.user.role === 'SUPER_ADMIN'
+    const isAdmin = await prisma.masjidAdmin.findFirst({
+      where: {
+        masjidId,
+        userId: session.user.id,
+      },
+    })
+    const isModerator = await prisma.masjidModerator.findFirst({
+      where: {
+        masjidId,
+        userId: session.user.id,
       },
     })
 
-    return NextResponse.json({ event })
+    if (!isSuperAdmin && !isAdmin && !isModerator) {
+      return NextResponse.json(
+        { error: 'You do not have permission to create events for this masjid' },
+        { status: 403 }
+      )
+    }
+
+    // Create event
+    const event = await prisma.event.create({
+      data: {
+        title,
+        slug,
+        description,
+        category,
+        masjidId,
+        organiserId,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate || startDate),
+        startTime,
+        endTime,
+        location,
+        requiresRSVP: requiresRSVP || false,
+        maxAttendees: maxAttendees ? parseInt(maxAttendees) : null,
+        isPublic: isPublic !== false,
+        status: status || 'DRAFT',
+      },
+      include: {
+        masjid: true,
+        organiser: true,
+      },
+    })
+
+    return NextResponse.json({
+      event,
+      message: 'Event created successfully',
+    })
   } catch (error) {
     console.error('Create event error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
   }
 }

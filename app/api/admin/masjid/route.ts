@@ -12,69 +12,86 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
+    const {
+      name,
+      slug,
+      description,
+      city,
+      country,
+      address,
+      state,
+      postalCode,
+      phone,
+      email,
+      website,
+      capacity,
+      isPublic,
+      allowEvents,
+    } = body
+
+    // Validation
+    if (!name || !city || !country || !slug) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      )
+    }
+
+    // Check if slug already exists
+    const existingMasjid = await prisma.masjid.findUnique({
+      where: { slug },
+    })
+
+    if (existingMasjid) {
+      return NextResponse.json(
+        { error: 'A masjid with this name already exists' },
+        { status: 400 }
+      )
+    }
 
     // Create masjid
     const masjid = await prisma.masjid.create({
       data: {
-        name: body.name,
-        slug: body.slug,
-        description: body.description,
-        address: body.address,
-        city: body.city,
-        state: body.state,
-        country: body.country,
-        postalCode: body.postalCode,
-        phone: body.phone,
-        email: body.email,
-        website: body.website,
-        capacity: body.capacity,
-        isPublic: body.isPublic,
-        allowEvents: body.allowEvents,
+        name,
+        slug,
+        description,
+        city,
+        country,
+        address,
+        state,
+        postalCode,
+        phone,
+        email,
+        website,
+        capacity: capacity ? parseInt(capacity) : null,
+        isPublic: isPublic !== false,
+        allowEvents: allowEvents !== false,
+        isActive: true,
       },
     })
 
-    // Auto-assign creator as admin
+    // Add creator as admin
     await prisma.masjidAdmin.create({
       data: {
         masjidId: masjid.id,
         userId: session.user.id,
-        role: 'SUPER_ADMIN',
-        assignedBy: session.user.id,
+        role: 'ADMIN',
+        canEditMasjid: true,
+        canManageEvents: true,
+        canManageMembers: true,
+        canAssignRoles: true,
       },
     })
 
-    return NextResponse.json({ masjid })
+    return NextResponse.json({
+      masjid,
+      message: 'Masjid created successfully',
+    })
   } catch (error) {
     console.error('Create masjid error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
-export async function GET(request: Request) {
-  try {
-    const session = await getServerSession(authOptions)
-
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const masjids = await prisma.masjid.findMany({
-      include: {
-        _count: {
-          select: {
-            events: true,
-            members: true,
-          }
-        }
-      },
-      orderBy: {
-        name: 'asc',
-      },
-    })
-
-    return NextResponse.json({ masjids })
-  } catch (error) {
-    console.error('Get masjids error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
   }
 }

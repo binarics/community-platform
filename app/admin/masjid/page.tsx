@@ -3,154 +3,163 @@ import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { Navigation } from '@/components/Navigation'
-import { MasjidList } from '@/components/masjid/MasjidList'
-import { MasjidStats } from '@/components/masjid/MasjidStats'
 import Link from 'next/link'
 
-export default async function MasjidManagementPage() {
+export default async function AdminMasjidPage() {
   const session = await getServerSession(authOptions)
 
-  if (!session || !['SUPER_ADMIN', 'ADMIN'].includes(session.user.role)) {
+  if (!session || session.user.role !== 'SUPER_ADMIN') {
     redirect('/')
   }
 
-  // Get all masjids with stats
   const masjids = await prisma.masjid.findMany({
     include: {
       _count: {
         select: {
           events: true,
           members: true,
-          moderators: true,
-        }
+          admins: true,
+        },
       },
-      admins: {
-        include: {
-          user: {
-            select: {
-              name: true,
-              email: true,
-            }
-          }
-        }
-      },
-      moderators: {
-        include: {
-          user: {
-            select: {
-              name: true,
-              email: true,
-            }
-          }
-        }
-      }
     },
     orderBy: {
-      name: 'asc',
+      createdAt: 'desc',
     },
   })
-
-  // Get overall stats
-  const totalEvents = await prisma.event.count()
-  const activeEvents = await prisma.event.count({
-    where: {
-      startDate: {  // Changed from 'date' to 'startDate'
-        gte: new Date(),
-      },
-    },
-  })
-  const totalMembers = await prisma.masjidMember.count()
 
   return (
     <div className="min-h-screen bg-cream">
       <Navigation />
 
-      <div className="max-w-7xl mx-auto px-8 py-12">
+      <div className="max-w-6xl mx-auto px-8 py-12">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="font-display text-5xl font-bold text-charcoal mb-2">
-                Masjid Management
-              </h1>
-              <p className="text-xl text-slate">
-                Manage mosques, events, and community organization
-              </p>
-            </div>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="font-display text-5xl font-bold text-charcoal mb-2">
+              Masjid Management
+            </h1>
+            <p className="text-xl text-slate">
+              Manage all mosques and Islamic centers on the platform
+            </p>
+          </div>
+          <Link href="/admin/masjid/new" className="btn btn-primary">
+            + Create Masjid
+          </Link>
+        </div>
 
-            <Link href="/admin/masjid/new" className="btn btn-primary">
-              + Create Masjid
+        {/* Stats */}
+        <div className="grid md:grid-cols-4 gap-6 mb-12">
+          <div className="card p-6">
+            <div className="text-sm font-semibold uppercase text-slate mb-2">
+              Total Masjids
+            </div>
+            <div className="font-display text-4xl font-bold text-charcoal">
+              {masjids.length}
+            </div>
+          </div>
+          <div className="card p-6">
+            <div className="text-sm font-semibold uppercase text-slate mb-2">
+              Active
+            </div>
+            <div className="font-display text-4xl font-bold text-green-600">
+              {masjids.filter((m) => m.isActive).length}
+            </div>
+          </div>
+          <div className="card p-6">
+            <div className="text-sm font-semibold uppercase text-slate mb-2">
+              Public
+            </div>
+            <div className="font-display text-4xl font-bold text-sage-600">
+              {masjids.filter((m) => m.isPublic).length}
+            </div>
+          </div>
+          <div className="card p-6">
+            <div className="text-sm font-semibold uppercase text-slate mb-2">
+              With Events
+            </div>
+            <div className="font-display text-4xl font-bold text-terracotta-600">
+              {masjids.filter((m) => m._count.events > 0).length}
+            </div>
+          </div>
+        </div>
+
+        {/* Masjids List */}
+        <div className="space-y-4">
+          {masjids.map((masjid) => (
+            <Link
+              key={masjid.id}
+              href={`/admin/masjid/${masjid.id}`}
+              className="card p-6 hover:-translate-y-0.5 transition block"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <h3 className="font-display text-2xl font-bold text-charcoal mb-2">
+                    {masjid.name}
+                  </h3>
+                  <div className="flex items-center gap-3 text-sm text-slate">
+                    <span>📍 {masjid.city}, {masjid.country}</span>
+                    {masjid.capacity && <span>👥 Capacity: {masjid.capacity}</span>}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <span
+                    className={`badge ${
+                      masjid.isActive
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-gray-100 text-gray-700'
+                    }`}
+                  >
+                    {masjid.isActive ? 'Active' : 'Inactive'}
+                  </span>
+                  <span className="badge bg-sage-100 text-sage-700">
+                    {masjid.isPublic ? 'Public' : 'Private'}
+                  </span>
+                </div>
+              </div>
+
+              {masjid.description && (
+                <p className="text-slate mb-4 line-clamp-2">{masjid.description}</p>
+              )}
+
+              <div className="grid grid-cols-3 gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="text-slate">Events:</span>
+                  <span className="font-semibold text-charcoal">
+                    {masjid._count.events}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-slate">Admins:</span>
+                  <span className="font-semibold text-charcoal">
+                    {masjid._count.admins}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-slate">Members:</span>
+                  <span className="font-semibold text-charcoal">
+                    {masjid._count.members}
+                  </span>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {/* Empty State */}
+        {masjids.length === 0 && (
+          <div className="card p-12 text-center">
+            <div className="text-6xl mb-4">🕌</div>
+            <h3 className="font-display text-2xl font-bold text-charcoal mb-2">
+              No Masjids Yet
+            </h3>
+            <p className="text-slate mb-6">
+              Get started by creating your first masjid
+            </p>
+            <Link href="/admin/masjid/new" className="btn btn-primary inline-flex">
+              Create First Masjid
             </Link>
           </div>
-        </div>
-
-        {/* Stats Cards */}
-        <MasjidStats 
-          totalMasjids={masjids.length}
-          totalEvents={totalEvents}
-          activeEvents={activeEvents}
-          totalMembers={totalMembers}
-        />
-
-        {/* Info Card */}
-        <div className="card p-6 mb-8 bg-sage-50 border border-sage-100">
-          <div className="flex items-start gap-3">
-            <div className="text-2xl">🕌</div>
-            <div>
-              <div className="font-semibold text-charcoal mb-2">
-                Masjid Management System
-              </div>
-              <ul className="text-sm text-slate space-y-1">
-                <li>• Create and organize multiple masjids/Islamic centers</li>
-                <li>• Assign admins and moderators with specific permissions</li>
-                <li>• Publish and manage events within each masjid</li>
-                <li>• Track member registrations and RSVPs</li>
-                <li>• Control visibility and access to events</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        {/* Masjid List */}
-        <div className="mb-8">
-          <h2 className="font-display text-3xl font-bold text-charcoal mb-6">
-            All Masjids ({masjids.length})
-          </h2>
-          <MasjidList masjids={masjids} />
-        </div>
-
-        {/* Quick Actions */}
-        <div className="grid md:grid-cols-3 gap-6">
-          <Link href="/admin/events" className="card p-6 hover:shadow-lg transition">
-            <div className="text-3xl mb-3">📅</div>
-            <h3 className="font-display text-xl font-bold text-charcoal mb-2">
-              Manage Events
-            </h3>
-            <p className="text-sm text-slate">
-              View and manage all events across all masjids
-            </p>
-          </Link>
-
-          <Link href="/admin/roles" className="card p-6 hover:shadow-lg transition">
-            <div className="text-3xl mb-3">👥</div>
-            <h3 className="font-display text-xl font-bold text-charcoal mb-2">
-              Assign Roles
-            </h3>
-            <p className="text-sm text-slate">
-              Manage admins, moderators, and permissions
-            </p>
-          </Link>
-
-          <Link href="/admin/analytics" className="card p-6 hover:shadow-lg transition">
-            <div className="text-3xl mb-3">📊</div>
-            <h3 className="font-display text-xl font-bold text-charcoal mb-2">
-              Analytics
-            </h3>
-            <p className="text-sm text-slate">
-              View engagement metrics and reports
-            </p>
-          </Link>
-        </div>
+        )}
       </div>
     </div>
   )
