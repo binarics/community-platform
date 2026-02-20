@@ -1,0 +1,455 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       String  @id @default(cuid())
+  email    String  @unique
+  name     String?
+  password String
+  role     String  @default("COMMUNITY_MEMBER")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organisedEvents Event[]   @relation("EventOrganiser")
+  comments        Comment[]
+
+  counsellorProfile CounsellorProfile?
+  clientBookings    Booking[]          @relation("ClientBookings")
+
+  roleRequests RoleRequest[]
+
+  clientDocuments ClientDocument[] @relation("ClientDocuments")
+
+  // Masjid Relations
+  adminOf     MasjidAdmin[]
+  moderatorOf MasjidModerator[]
+  memberOf    MasjidMember[]
+  eventRSVPs  EventRSVP[]
+
+  counsellorRelations ClientCounsellor[] @relation("ClientRelation")
+
+}
+
+model ClientDocument {
+  id           String            @id @default(cuid())
+  clientId     String
+  client       User              @relation("ClientDocuments", fields: [clientId], references: [id])
+  counsellorId String
+  counsellor   CounsellorProfile @relation(fields: [counsellorId], references: [id])
+
+  name        String
+  type        String // CONSENT, ASSESSMENT, REPORT, TREATMENT_PLAN
+  fileUrl     String
+  description String?
+
+  uploadedAt DateTime @default(now())
+
+  @@index([clientId])
+  @@index([counsellorId])
+}
+
+model Organisation {
+  id          String  @id @default(cuid())
+  name        String
+  type        String
+  slug        String  @unique
+  description String?
+  address     String?
+  postcode    String?
+  lat         Float?
+  lng         Float?
+  email       String?
+  phone       String?
+  website     String?
+  verified    Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  events  Event[]
+  courses Course[]
+  rooms   Room[]
+}
+
+model Event {
+  id                   String       @id @default(cuid())
+  masjidId             String
+  title                String?
+  slug                 String?       @unique
+  description          String?
+  category             String?
+  startDate            DateTime
+  endDate              DateTime
+  startTime            String?
+  endTime              String?
+  timezone             String?       @default("America/New_York")
+  isAllDay             Boolean?      @default(false)
+  isRecurring          Boolean?      @default(false)
+  recurrence           String? // Removed @db.Text as it's not supported in SQLite
+  location             String?
+  requiresRSVP         Boolean      @default(false)
+  maxAttendees         Int?
+  registrationDeadline DateTime?
+  allowWaitlist        Boolean      @default(false)
+  venue                String?
+  isOnline             Boolean?      @default(false)
+  onlineLink           String?
+  capacity             Int?
+  entryType            String?
+  price                Float?
+  audience             String?
+  ageGroup             String?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  organisationId       String?
+  organisation         Organisation? @relation(fields: [organisationId], references: [id])
+  organiserId          String?
+  organiser            User?         @relation("EventOrganiser", fields: [organiserId], references: [id])
+  comments             Comment[]
+  isFree               Boolean?      @default(true)
+  currency             String?       @default("USD")
+  image                String?
+  attachments          String? // Removed @db.Text
+  status               String       @default("DRAFT")
+  isPublic             Boolean?      @default(true)
+  isFeatured           Boolean?      @default(false)
+  publishedAt          DateTime?
+  masjid               Masjid?      @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  rsvps                EventRSVP[]  @relation("EventRSVPs")
+
+  @@index([masjidId])
+}
+
+model Comment {
+  id        String    @id @default(cuid())
+  content   String
+  anonymous Boolean   @default(false)
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  eventId   String
+  event     Event     @relation(fields: [eventId], references: [id])
+  parentId  String?
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  replies   Comment[] @relation("CommentReplies")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Course {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  description String
+  duration    String
+  schedule    String
+  startDate   DateTime
+  endDate     DateTime
+  capacity    Int
+  price       Float
+  status      String   @default("DRAFT")
+
+  organisationId String
+  organisation   Organisation    @relation(fields: [organisationId], references: [id])
+  sessions       CourseSession[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CourseSession {
+  id            String   @id @default(cuid())
+  courseId      String
+  course        Course   @relation(fields: [courseId], references: [id])
+  sessionNumber Int
+  title         String
+  description   String?
+  date          DateTime
+  duration      Int
+  materials     String?
+  createdAt     DateTime @default(now())
+}
+
+model CounsellorProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+
+  specializations String // JSON array
+  bio             String
+  hourlyRate      Float
+  availability    String // JSON object
+  verified        Boolean @default(false)
+
+  // ADD THESE RELATIONS:
+  bookings     Booking[]
+  sessionNotes SessionNote[]
+
+  // ADD THESE NEW FIELDS:
+  notificationSettings String? // JSON: {emailReminders: true, smsReminders: false, ...}
+  roomPreferences      String? // JSON: {favoriteRooms: [], defaultRoom: null}
+  sessionDefaults      String? // JSON: {duration: 60, price: 50, type: "INDIVIDUAL"}
+
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+
+  documents ClientDocument[]
+
+  clientRelations ClientCounsellor[]
+}
+
+model Booking {
+  id           String            @id @default(cuid())
+  counsellorId String
+  counsellor   CounsellorProfile @relation(fields: [counsellorId], references: [id])
+  clientId     String
+  client       User              @relation("ClientBookings", fields: [clientId], references: [id])
+  roomId       String?
+  room         Room?             @relation(fields: [roomId], references: [id])
+
+  startTime     DateTime
+  endTime       DateTime
+  status        String   @default("SCHEDULED") // SCHEDULED, COMPLETED, CANCELLED, NO_SHOW
+  sessionType   String?  @default("INDIVIDUAL") // INDIVIDUAL, COUPLES, GROUP, ASSESSMENT
+  paymentStatus String   @default("UNPAID") // UNPAID, PARTIAL, PAID
+  notes         String?
+
+  // ADD THESE NEW FIELDS:
+  signedIn       Boolean   @default(false)
+  signInTime     DateTime?
+  signInMood     String?
+  signInConcerns String?
+
+  signedOut       Boolean   @default(false)
+  signOutTime     DateTime?
+  signOutFeedback String?
+  signOutRating   Int?
+
+  reminderSent   Boolean   @default(false)
+  reminderSentAt DateTime?
+
+  // ADD THIS RELATION:
+  sessionNotes SessionNote[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SessionNote {
+  id           String            @id @default(cuid())
+  bookingId    String
+  booking      Booking           @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  counsellorId String
+  counsellor   CounsellorProfile @relation(fields: [counsellorId], references: [id])
+
+  // SOAP Format Fields:
+  subjective String // What the client reports
+  objective  String // What you observe
+  assessment String // Your clinical assessment
+  plan       String // Treatment plan/next steps
+
+  private Boolean @default(true) // Only counsellor can view
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([bookingId])
+  @@index([counsellorId])
+}
+
+model Room {
+  id             String       @id @default(cuid())
+  name           String
+  capacity       Int
+  facilities     String?
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id])
+  bookings       Booking[]
+  createdAt      DateTime     @default(now())
+}
+
+model RoleRequest {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  requestedRole String
+  currentRole   String
+  reason        String?
+  status        String    @default("PENDING")
+  reviewedBy    String?
+  reviewedAt    DateTime?
+  reviewNotes   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Masjid {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique
+  description String? // Removed @db.Text for SQLite
+
+  // Location
+  address    String?
+  city       String
+  state      String?
+  country    String
+  postalCode String?
+  latitude   Float?
+  longitude  Float?
+
+  // Contact Information
+  phone   String?
+  email   String?
+  website String?
+
+  // Social Media
+  facebook  String?
+  instagram String?
+  twitter   String?
+  youtube   String?
+
+  // Masjid Details
+  capacity    Int?
+  facilities  String? // Removed @db.Text
+  prayerTimes String? // Removed @db.Text
+
+  // Settings
+  isActive         Boolean @default(true)
+  isPublic         Boolean @default(true)
+  allowEvents      Boolean @default(true)
+  requiresApproval Boolean @default(false)
+
+  // Branding
+  logo         String?
+  coverImage   String?
+  primaryColor String? @default("#4A7C59")
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  events     Event[]
+  admins     MasjidAdmin[]
+  moderators MasjidModerator[]
+  members    MasjidMember[]
+
+  @@index([slug])
+  @@index([city, country])
+}
+
+model MasjidAdmin {
+  id       String @id @default(cuid())
+  masjidId String
+  userId   String
+  role     String @default("ADMIN")
+
+  // Permissions
+  canEditMasjid    Boolean @default(true)
+  canManageEvents  Boolean @default(true)
+  canManageMembers Boolean @default(true)
+  canAssignRoles   Boolean @default(false)
+
+  assignedAt DateTime @default(now())
+  assignedBy String?
+
+  masjid Masjid @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([masjidId, userId])
+  @@index([userId])
+}
+
+model MasjidModerator {
+  id       String @id @default(cuid())
+  masjidId String
+  userId   String
+
+  // Permissions
+  canCreateEvents      Boolean @default(true)
+  canEditEvents        Boolean @default(true)
+  canDeleteEvents      Boolean @default(false)
+  canApproveMembers    Boolean @default(true)
+  canSendNotifications Boolean @default(true)
+
+  assignedAt DateTime @default(now())
+  assignedBy String?
+
+  masjid Masjid @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([masjidId, userId])
+  @@index([userId])
+}
+
+model MasjidMember {
+  id       String @id @default(cuid())
+  masjidId String
+  userId   String
+
+  // Member Settings
+  receiveNotifications    Boolean @default(true)
+  notificationPreferences String? // Removed @db.Text
+  favorited               Boolean @default(false)
+
+  joinedAt DateTime @default(now())
+
+  masjid Masjid @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([masjidId, userId])
+  @@index([userId])
+}
+
+model EventRSVP {
+  id      String @id @default(cuid())
+  eventId String
+  userId  String
+
+  // RSVP Details
+  status String @default("ATTENDING")
+  guests Int    @default(0)
+
+  // Additional Info
+  dietaryRestrictions String?
+  specialRequests     String?
+
+  // Payment (if event has cost)
+  paymentStatus String?
+  paymentAmount Float?
+
+  // Timestamps
+  rsvpedAt  DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  event Event @relation("EventRSVPs", fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([userId])
+}
+
+model ClientCounsellor {
+  id           String   @id @default(cuid())
+  clientId     String
+  client       User     @relation("ClientRelation", fields: [clientId], references: [id])
+  counsellorId String
+  counsellor   CounsellorProfile @relation(fields: [counsellorId], references: [id])
+  
+  assignedAt DateTime @default(now())
+  notes      String?
+  isActive   Boolean  @default(true)  // Make sure this line is there!
+
+  
+  @@unique([clientId, counsellorId])
+  @@index([clientId])
+  @@index([counsellorId])
+}
