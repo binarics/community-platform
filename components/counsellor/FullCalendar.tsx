@@ -45,7 +45,7 @@ interface FullCalendarProps {
 type ViewType = 'month' | 'week' | 'day' | 'agenda'
 
 export function FullCalendar({
-  bookings,
+  bookings: initialBookings,
   clients,
   rooms,
   counsellorId,
@@ -60,6 +60,9 @@ export function FullCalendar({
   const [draggedBooking, setDraggedBooking] = useState<Booking | null>(null)
   const [showQuickAdd, setShowQuickAdd] = useState(false)
   const [quickAddDate, setQuickAddDate] = useState<Date | null>(null)
+  const [isShared, setIsShared] = useState(false)
+  const [bookings, setBookings] = useState(initialBookings)
+  const [loading, setLoading] = useState(false)
 
   // Update URL when view/date changes
   useEffect(() => {
@@ -68,6 +71,35 @@ export function FullCalendar({
     params.set('date', currentDate.toISOString().split('T')[0])
     router.push(`/counsellor/calendar?${params.toString()}`, { scroll: false })
   }, [view, currentDate])
+
+  // Fetch all bookings when in shared mode
+  useEffect(() => {
+    if (isShared) {
+      fetchAllBookings()
+    } else {
+      setBookings(initialBookings)
+    }
+  }, [isShared, initialBookings])
+
+  async function fetchAllBookings() {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/counsellor/calendar/all-bookings')
+      if (response.ok) {
+        const data = await response.json()
+        setBookings(data.bookings)
+      }
+    } catch (error) {
+      console.error('Failed to fetch all bookings:', error)
+      setBookings(initialBookings)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function toggleSharing() {
+    setIsShared(!isShared)
+  }
 
   // Navigation functions
   function goToToday() {
@@ -207,23 +239,66 @@ export function FullCalendar({
           </h2>
         </div>
 
-        {/* View Switcher */}
-        <div className="flex gap-2">
-          {(['month', 'week', 'day', 'agenda'] as ViewType[]).map((v) => (
+        {/* Sharing Toggle and View Switcher */}
+        <div className="flex items-center gap-3">
+          {/* Sharing Toggle */}
+          <div className="flex items-center gap-2 px-3 py-2 bg-sage-50 rounded-lg">
+            <span className="text-sm font-medium text-slate">
+              {isShared ? '👥 Public' : '🔒 Private'}
+            </span>
             <button
-              key={v}
-              onClick={() => setView(v)}
-              className={`px-4 py-2 rounded-xl font-semibold text-sm transition ${
-                view === v
-                  ? 'bg-sage-500 text-white'
-                  : 'bg-sage-50 text-slate hover:bg-sage-100'
-              }`}
+              onClick={toggleSharing}
+              disabled={loading}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                isShared ? 'bg-sage-500' : 'bg-gray-300'
+              } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title={isShared ? 'Switch to private view (your bookings only)' : 'Switch to public view (all counsellors)'}
             >
-              {v.charAt(0).toUpperCase() + v.slice(1)}
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  isShared ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
             </button>
-          ))}
+          </div>
+
+          {/* View Switcher */}
+          <div className="flex gap-2">
+            {(['month', 'week', 'day', 'agenda'] as ViewType[]).map((v) => (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                className={`px-4 py-2 rounded-xl font-semibold text-sm transition ${
+                  view === v
+                    ? 'bg-sage-500 text-white'
+                    : 'bg-sage-50 text-slate hover:bg-sage-100'
+                }`}
+              >
+                {v.charAt(0).toUpperCase() + v.slice(1)}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
+
+      {/* Info Banner - Shows in shared mode */}
+      {isShared && (
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-100 rounded-xl flex items-start gap-3">
+          <span className="text-blue-600 text-xl">ℹ️</span>
+          <div className="text-sm text-blue-900">
+            <span className="font-semibold">Public Calendar View:</span> You're viewing all counsellors' bookings. 
+            Client names are hidden for privacy. Only room and counsellor information is shown.
+          </div>
+        </div>
+      )}
+
+      {/* Loading indicator */}
+      {loading && (
+        <div className="text-center py-8 text-slate">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-sage-500"></div>
+          <p className="mt-2">Loading {isShared ? 'all counsellors' : 'your'} bookings...</p>
+        </div>
+      )}
 
       {/* Calendar Views */}
       {view === 'month' && (
