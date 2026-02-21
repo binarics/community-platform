@@ -1,213 +1,344 @@
-import Link from 'next/link'
-import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { Navigation } from '@/components/Navigation'
-import { RSVPButton } from '@/components/RSVPButton'
+import { notFound } from 'next/navigation'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import Link from 'next/link'
+import { EventRSVPButton } from '@/components/events/EventRSVPButton'
+import { EventComments } from '@/components/events/EventComments'
+import { ShareButton } from '@/components/events/ShareButton'
 
-export default async function EventPage({ params }: { params: { slug: string } }) {
+export default async function EventDetailPage({ params }: { params: { slug: string } }) {
+  const session = await getServerSession(authOptions)
+
   const event = await prisma.event.findUnique({
     where: { slug: params.slug },
     include: {
+      masjid: true,
       organisation: true,
-      organiser: true,
-      _count: { select: { rsvps: true, comments: true } },
+      organiser: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      rsvps: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+        orderBy: {
+          updatedAt: 'desc',
+        },
+      },
       comments: {
         where: { parentId: null },
         include: {
-          user: true,
-          replies: { include: { user: true } },
+          user: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          replies: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+            orderBy: {
+              updatedAt: 'asc',
+            },
+          },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: {
+          updatedAt: 'desc',
+        },
       },
     },
   })
 
-  if (!event) notFound()
+  if (!event) {
+    notFound()
+  }
+
+  // Check if event is approved (only show approved events to public)
+  if (event.status !== 'APPROVED' && (!session || session.user.role !== 'SUPER_ADMIN')) {
+    notFound()
+  }
+
+  // Check if user has RSVPed
+  const userRSVP = session
+    ? event.rsvps.find((rsvp) => rsvp.userId === session.user.id)
+    : null
 
   const startDate = new Date(event.startDate)
-  const endDate = new Date(event.endDate)
+  const endDate = event.endDate ? new Date(event.endDate) : null
   const day = startDate.getDate()
   const month = startDate.toLocaleDateString('en-GB', { month: 'short' }).toUpperCase()
-  const startTime = startDate.toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit', hour12: true })
-  const endTime = endDate.toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit', hour12: true })
-  const fullDate = startDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  const year = startDate.getFullYear()
+  const fullDate = startDate.toLocaleDateString('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+
+  const startTime =
+    event.startTime ||
+    startDate.toLocaleTimeString('en-GB', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    })
+
+  const endTime = event.endTime || (endDate
+    ? endDate.toLocaleTimeString('en-GB', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      })
+    : null)
+
+  // Determine organization details
+  const orgName = event.masjid?.name || event.organisation?.name || 'Community Event'
+  const orgType = event.masjid ? 'masjid' : 'organisation'
+  const orgSlug = event.masjid?.slug || event.organisation?.slug
 
   return (
     <div className="min-h-screen bg-cream">
-      <nav className="bg-white border-b border-sage-100">
-        <div className="max-w-6xl mx-auto px-8 py-4 flex justify-between items-center">
-          <Link href="/" className="font-display text-xl font-bold text-sage-500">
-            Community Platform
-          </Link>
-          <Link href="/discover" className="text-slate hover:text-sage-500">
-            ← Back to Events
-          </Link>
-        </div>
-      </nav>
-
-      <div className="h-80 bg-gradient-to-br from-sage-100 to-clay-100 flex items-center justify-center text-slate">
-        Event Banner
-      </div>
+      <Navigation />
 
       <div className="max-w-6xl mx-auto px-8 py-12">
-        <div className="grid lg:grid-cols-[1fr_360px] gap-12">
-          <main>
-            <div className="flex gap-2 mb-4">
-              {event.organisation.verified && (
-                <span className="badge bg-sage-100 text-sage-700">✓ Verified</span>
+        {/* Back Link */}
+        <Link
+          href="/discover"
+          className="text-sage-500 hover:text-sage-600 font-semibold text-sm mb-6 inline-block"
+        >
+          ← Back to Events
+        </Link>
+
+        <div className="grid lg:grid-cols-[1fr_380px] gap-8">
+          {/* Main Content */}
+          <div>
+            {/* Event Header */}
+            <div className="card p-8 mb-8">
+              {/* Image */}
+              {event.imageUrl && (
+                <div className="mb-6 -mx-8 -mt-8">
+                  <img
+                    src={event.imageUrl}
+                    alt={event.title || 'Event'}
+                    className="w-full h-64 object-cover rounded-t-2xl"
+                  />
+                </div>
               )}
-              <span className="badge bg-clay-100 text-clay-600">{event.entryType}</span>
-              <span className="badge bg-sage-50 text-sage-700">{event.category}</span>
-            </div>
 
-            <h1 className="font-display text-5xl font-bold text-charcoal mb-4">
-              {event.title}
-            </h1>
+              {/* Category & Status */}
+              <div className="flex items-center gap-3 mb-4">
+                {event.category && (
+                  <span className="badge bg-sage-100 text-sage-700">{event.category}</span>
+                )}
+                {event.status !== 'APPROVED' && (
+                  <span className="badge bg-amber-100 text-amber-700">{event.status}</span>
+                )}
+              </div>
 
-            <Link href={`/masjid/${event.organisation.slug}`} className="flex items-center gap-2 text-sage-500 font-semibold text-lg mb-8 hover:underline">
-              <span>🕌</span>
-              <span>{event.organisation.name}</span>
-            </Link>
+              {/* Title */}
+              <h1 className="font-display text-4xl font-bold text-charcoal mb-4">
+                {event.title}
+              </h1>
 
-            <div className="card p-8 mb-8 grid md:grid-cols-4 gap-6">
-              <div>
-                <div className="text-3xl mb-2">📅</div>
-                <div className="text-xs font-semibold uppercase text-slate mb-1">Date & Time</div>
-                <div className="font-semibold text-charcoal">{fullDate}</div>
-                <div className="text-sm text-slate">{startTime} - {endTime}</div>
-              </div>
-              <div>
-                <div className="text-3xl mb-2">📍</div>
-                <div className="text-xs font-semibold uppercase text-slate mb-1">Location</div>
-                <div className="font-semibold text-charcoal">{event.venue || 'Online'}</div>
-              </div>
-              <div>
-                <div className="text-3xl mb-2">👥</div>
-                <div className="text-xs font-semibold uppercase text-slate mb-1">Audience</div>
-                <div className="font-semibold text-charcoal">{event.audience}</div>
-                <div className="text-sm text-slate">{event.ageGroup}</div>
-              </div>
-              <div>
-                <div className="text-3xl mb-2">🎫</div>
-                <div className="text-xs font-semibold uppercase text-slate mb-1">Entry</div>
-                <div className="font-semibold text-charcoal">{event.entryType}</div>
-              </div>
-            </div>
+              {/* Organization Link */}
+              {orgSlug ? (
+                <Link
+                  href={orgType === 'masjid' ? `/masjids/${orgSlug}` : `#`}
+                  className="text-sage-600 hover:text-sage-700 font-semibold text-lg mb-6 inline-flex items-center gap-2"
+                >
+                  {event.masjid ? '🕌' : '🏢'} {orgName}
+                </Link>
+              ) : (
+                <div className="text-sage-600 font-semibold text-lg mb-6 flex items-center gap-2">
+                  {event.masjid ? '🕌' : '🏢'} {orgName}
+                </div>
+              )}
 
-            <section className="mb-12">
-              <h2 className="font-display text-3xl font-bold text-charcoal mb-4">
-                About This Event
-              </h2>
-              <div className="prose prose-lg max-w-none text-slate leading-relaxed">
-                {event.description.split('\n').map((para, i) => (
-                  <p key={i} className="mb-4">{para}</p>
+              {/* Description */}
+              <div className="prose prose-lg max-w-none text-slate leading-relaxed mt-6">
+                {event.description?.split('\n').map((para, i) => (
+                  <p key={i}>{para}</p>
                 ))}
               </div>
-            </section>
+            </div>
 
-            <section>
-              <h2 className="font-display text-3xl font-bold text-charcoal mb-6">
-                Discussion ({event._count.comments})
+            {/* Comments Section */}
+            <div className="card p-8">
+              <h2 className="font-display text-2xl font-bold text-charcoal mb-6">
+                Discussion ({event.comments.length})
               </h2>
-              
-              <div className="card p-6 mb-8">
-                <textarea 
-                  className="w-full p-4 border-2 border-sage-100 rounded-xl focus:border-sage-500 focus:ring-4 focus:ring-sage-50 transition resize-none" 
-                  rows={3}
-                  placeholder="Ask a question or share your thoughts..."
-                />
-                <div className="flex justify-between items-center mt-4">
-                  <label className="flex items-center gap-2 text-sm text-slate">
-                    <input type="checkbox" className="w-4 h-4" />
-                    <span>Post anonymously</span>
-                  </label>
-                  <button className="btn btn-primary btn-sm">Post Comment</button>
+              <EventComments
+                eventId={event.id}
+                comments={event.comments}
+                currentUserId={session?.user.id}
+              />
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Date Card */}
+            <div className="card p-6 text-center">
+              <div className="inline-block bg-gradient-to-br from-sage-500 to-sage-600 text-white rounded-2xl p-6 mb-4">
+                <div className="text-sm font-bold mb-1">{month}</div>
+                <div className="text-5xl font-bold">{day}</div>
+                <div className="text-sm mt-1">{year}</div>
+              </div>
+              <div className="font-semibold text-charcoal text-lg">{fullDate}</div>
+              <div className="text-sage-600 font-semibold mt-2">
+                {startTime}
+                {endTime && ` - ${endTime}`}
+              </div>
+            </div>
+
+            {/* RSVP Card */}
+            <div className="card p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-sm font-semibold uppercase text-slate">Attendees</div>
+                <div className="font-display text-2xl font-bold text-charcoal">
+                  {event.rsvps.length}
+                  {event.capacity && <span className="text-slate text-lg">/{event.capacity}</span>}
                 </div>
               </div>
 
-              <div className="space-y-6">
-                {event.comments.map((comment) => (
-                  <div key={comment.id} className="card p-6">
-                    <div className="flex gap-4">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sage-100 to-clay-100 flex items-center justify-center font-semibold text-sage-600">
-                        {comment.anonymous ? '?' : comment.user.name?.[0] || 'U'}
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-semibold text-charcoal">
-                          {comment.anonymous ? 'Community Member' : comment.user.name}
+              <EventRSVPButton
+                eventId={event.id}
+                userRSVP={userRSVP}
+                isLoggedIn={!!session}
+                capacity={event.capacity}
+                currentCount={event.rsvps.length}
+              />
+
+              {/* Recent Attendees */}
+              {event.rsvps.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-sage-100">
+                  <div className="text-xs font-semibold uppercase text-slate mb-3">
+                    Recent Attendees
+                  </div>
+                  <div className="space-y-2">
+                    {event.rsvps.slice(0, 5).map((rsvp) => (
+                      <div key={rsvp.id} className="flex items-center gap-2 text-sm">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-terracotta-100 to-terracotta-200 flex items-center justify-center font-display font-bold text-terracotta-600">
+                          {rsvp.user.name?.charAt(0).toUpperCase() || '?'}
                         </div>
-                        <div className="text-sm text-slate mb-2">
-                          {new Date(comment.createdAt).toLocaleDateString()}
-                        </div>
-                        <p className="text-slate leading-relaxed mb-3">{comment.content}</p>
-                        <button className="text-sm text-sage-500 hover:text-sage-600 font-semibold">
-                          Reply
-                        </button>
+                        <span className="text-charcoal">{rsvp.user.name || 'Anonymous'}</span>
                       </div>
+                    ))}
+                    {event.rsvps.length > 5 && (
+                      <div className="text-xs text-slate">
+                        +{event.rsvps.length - 5} more attending
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Event Details */}
+            <div className="card p-6">
+              <h3 className="font-display text-xl font-bold text-charcoal mb-4">
+                Event Details
+              </h3>
+
+              <div className="space-y-4 text-sm">
+                {/* Location */}
+                {event.location && (
+                  <div>
+                    <div className="flex items-center gap-2 text-slate mb-1">
+                      <span>📍</span>
+                      <span className="font-semibold">Location</span>
+                    </div>
+                    <div className="text-charcoal pl-6">{event.location}</div>
+                  </div>
+                )}
+
+                {/* Online Link */}
+                {event.onlineLink && (
+                  <div>
+                    <div className="flex items-center gap-2 text-slate mb-1">
+                      <span>💻</span>
+                      <span className="font-semibold">Online Event</span>
+                    </div>
+                    <a
+                      href={event.onlineLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sage-500 hover:text-sage-600 pl-6 break-all"
+                    >
+                      Join Online
+                    </a>
+                  </div>
+                )}
+
+                {/* Organizer */}
+                {event.organiser && (
+                  <div>
+                    <div className="flex items-center gap-2 text-slate mb-1">
+                      <span>👤</span>
+                      <span className="font-semibold">Organizer</span>
+                    </div>
+                    <div className="text-charcoal pl-6">{event.organiser.name}</div>
+                  </div>
+                )}
+
+                {/* Capacity */}
+                {event.capacity && (
+                  <div>
+                    <div className="flex items-center gap-2 text-slate mb-1">
+                      <span>🎫</span>
+                      <span className="font-semibold">Capacity</span>
+                    </div>
+                    <div className="text-charcoal pl-6">
+                      {event.capacity} attendees max
+                      {event.rsvps.length >= event.capacity && (
+                        <span className="text-red-600 ml-2">(Full)</span>
+                      )}
                     </div>
                   </div>
-                ))}
-              </div>
-            </section>
-          </main>
+                )}
 
-          <aside>
-            <div className="card p-6 mb-6 sticky top-24 border border-slate-200 shadow-sm rounded-xl">
-              {/* 1. Centered Top Count */}
-              <div className="flex flex-col items-center justify-center pb-6 mb-6 border-b border-slate-100">
-                <div className="text-5xl font-display font-bold text-slate-900">
-                  {event._count.rsvps}
-                </div>
-                <div className="text-sm text-slate-500 text-center">
-                  people have RSVP'd
-                </div>
-              </div>
-
-              {/* 2. RSVP Button (Centered/Full Width) */}
-              <div className="flex flex-col items-center w-full mb-4">
-                {/* Ensure RSVPButton component has 'w-full' inside it, 
-                    or wrap it in a div that centers its contents */}
-                <RSVPButton 
-                  eventId={event.id} 
-                  initialRSVPCount={event._count.rsvps} 
-                />
-              </div>
-
-              {/* 3. Helper Text */}
-              <p className="text-center text-xs text-slate-400 mb-6">
-                Free to attend • No ticket required
-              </p>
-
-              {/* 4. Action Grid */}
-              <div className="grid grid-cols-2 gap-3">
-                <button className="btn btn-outline btn-sm flex items-center justify-center gap-2">
-                  <span>📅</span> Calendar
-                </button>
-                <button className="btn btn-outline btn-sm flex items-center justify-center gap-2">
-                  <span>🔗</span> Share
-                </button>
+                {/* Registration URL */}
+                {event.registrationUrl && (
+                  <div>
+                    <a
+                      href={event.registrationUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-outline w-full justify-center text-sm"
+                    >
+                      External Registration →
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
 
+            {/* Share Card */}
             <div className="card p-6">
-              <h3 className="font-display text-lg font-bold mb-4">Location</h3>
-              <div className="h-48 bg-sage-50 rounded-lg mb-4 flex items-center justify-center text-sm text-slate">
-                Map View
+              <h3 className="font-display text-xl font-bold text-charcoal mb-4">Share Event</h3>
+              <div className="text-sm text-slate mb-3">
+                Spread the word about this event
               </div>
-              <div className="text-sm mb-2 text-charcoal font-medium">
-                {event.venue || 'Online Event'}
-              </div>
-              {event.organisation.address && (
-                <div className="text-sm text-slate mb-3">
-                  {event.organisation.address}<br />
-                  {event.organisation.postcode}
-                </div>
-              )}
-              <a href="#" className="text-sage-500 font-semibold text-sm hover:underline">
-                Get Directions →
-              </a>
+              <ShareButton title={event.title || 'Event'} description={event.description || ''} />
             </div>
-          </aside>
+          </div>
         </div>
       </div>
     </div>

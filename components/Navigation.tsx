@@ -116,6 +116,14 @@ export function Navigation() {
               <span className="text-xl group-hover:scale-110 transition">🔍</span>
               <span className="font-medium">Discover Events</span>
             </Link>
+
+            <Link
+              href="/masjids"
+              className="flex items-center gap-3 px-4 py-3 text-charcoal hover:bg-sage-50 rounded-lg transition group"
+            >
+              <span className="text-xl group-hover:scale-110 transition">🕌</span>
+              <span className="font-medium">Masjids</span>
+            </Link>
             
             <Link 
               href="/courses" 
