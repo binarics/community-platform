@@ -13,11 +13,16 @@ export default async function ClientNotesPage({ params }: { params: { id: string
     redirect('/')
   }
 
-  const profile = await prisma.counsellorProfile.findFirst({
+  let profile = await prisma.counsellorProfile.findFirst({
     where: { userId: session.user.id },
   })
 
-  if (!profile && session.user.role !== 'SUPER_ADMIN') {
+  // If SUPER_ADMIN and no own profile, use first available counsellor profile
+  if (!profile && session.user.role === 'SUPER_ADMIN') {
+    profile = await prisma.counsellorProfile.findFirst()
+  }
+
+  if (!profile) {
     redirect('/counsellor/setup')
   }
 
