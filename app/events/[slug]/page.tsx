@@ -70,8 +70,8 @@ export default async function EventDetailPage({ params }: { params: { slug: stri
     notFound()
   }
 
-  // Check if event is approved (only show approved events to public)
-  if (event.status !== 'APPROVED' && (!session || session.user.role !== 'SUPER_ADMIN')) {
+  // FIX: Check if event is published (PUBLISHED status, not APPROVED)
+  if (event.status !== 'PUBLISHED' && (!session || session.user.role !== 'SUPER_ADMIN')) {
     notFound()
   }
 
@@ -131,11 +131,11 @@ export default async function EventDetailPage({ params }: { params: { slug: stri
           <div>
             {/* Event Header */}
             <div className="card p-8 mb-8">
-              {/* Image */}
-              {event.imageUrl && (
+              {/* FIX: Use 'image' field instead of 'imageUrl' */}
+              {event.image && (
                 <div className="mb-6 -mx-8 -mt-8">
                   <img
-                    src={event.imageUrl}
+                    src={event.image}
                     alt={event.title || 'Event'}
                     className="w-full h-64 object-cover rounded-t-2xl"
                   />
@@ -147,7 +147,7 @@ export default async function EventDetailPage({ params }: { params: { slug: stri
                 {event.category && (
                   <span className="badge bg-sage-100 text-sage-700">{event.category}</span>
                 )}
-                {event.status !== 'APPROVED' && (
+                {event.status !== 'PUBLISHED' && (
                   <span className="badge bg-amber-100 text-amber-700">{event.status}</span>
                 )}
               </div>
@@ -186,6 +186,7 @@ export default async function EventDetailPage({ params }: { params: { slug: stri
               </h2>
               <EventComments
                 eventId={event.id}
+                eventSlug={event.slug || ''}
                 comments={event.comments}
                 currentUserId={session?.user.id}
               />
@@ -220,6 +221,7 @@ export default async function EventDetailPage({ params }: { params: { slug: stri
 
               <EventRSVPButton
                 eventId={event.id}
+                eventSlug={event.slug || ''}
                 userRSVP={userRSVP}
                 isLoggedIn={!!session}
                 capacity={event.capacity}
@@ -311,20 +313,6 @@ export default async function EventDetailPage({ params }: { params: { slug: stri
                         <span className="text-red-600 ml-2">(Full)</span>
                       )}
                     </div>
-                  </div>
-                )}
-
-                {/* Registration URL */}
-                {event.registrationUrl && (
-                  <div>
-                    <a
-                      href={event.registrationUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn btn-outline w-full justify-center text-sm"
-                    >
-                      External Registration →
-                    </a>
                   </div>
                 )}
               </div>

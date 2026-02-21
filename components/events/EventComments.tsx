@@ -17,11 +17,12 @@ interface Comment {
 
 interface EventCommentsProps {
   eventId: string
+  eventSlug: string
   comments: Comment[]
   currentUserId?: string
 }
 
-export function EventComments({ eventId, comments, currentUserId }: EventCommentsProps) {
+export function EventComments({ eventId, eventSlug, comments, currentUserId }: EventCommentsProps) {
   const router = useRouter()
   const [newComment, setNewComment] = useState('')
   const [loading, setLoading] = useState(false)
@@ -32,7 +33,7 @@ export function EventComments({ eventId, comments, currentUserId }: EventComment
     e.preventDefault()
 
     if (!currentUserId) {
-      router.push(`/login?redirect=/events/${eventId}`)
+      router.push(`/login?redirect=/events/${eventSlug}`)
       return
     }
 
@@ -43,7 +44,8 @@ export function EventComments({ eventId, comments, currentUserId }: EventComment
     setLoading(true)
 
     try {
-      const response = await fetch(`/api/events/${eventId}/comments`, {
+      // FIX: Use slug-based endpoint
+      const response = await fetch(`/api/events/${eventSlug}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -60,9 +62,13 @@ export function EventComments({ eventId, comments, currentUserId }: EventComment
           setNewComment('')
         }
         router.refresh()
+      } else {
+        const data = await response.json()
+        alert(data.error || 'Failed to post comment')
       }
     } catch (error) {
       console.error('Comment error:', error)
+      alert('Something went wrong. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -84,7 +90,7 @@ export function EventComments({ eventId, comments, currentUserId }: EventComment
             <button
               type="submit"
               disabled={loading || !newComment.trim()}
-              className="btn btn-primary"
+              className="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Posting...' : 'Post Comment'}
             </button>
@@ -93,7 +99,7 @@ export function EventComments({ eventId, comments, currentUserId }: EventComment
       ) : (
         <div className="mb-8 p-6 bg-sage-50 border border-sage-100 rounded-xl text-center">
           <p className="text-slate mb-3">Sign in to join the discussion</p>
-          <Link href={`/login?redirect=/events/${eventId}`} className="btn btn-primary">
+          <Link href={`/login?redirect=/events/${eventSlug}`} className="btn btn-primary">
             Sign In
           </Link>
         </div>
@@ -167,7 +173,7 @@ export function EventComments({ eventId, comments, currentUserId }: EventComment
                     <button
                       type="submit"
                       disabled={loading || !replyContent.trim()}
-                      className="btn btn-primary text-sm"
+                      className="btn btn-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {loading ? 'Posting...' : 'Reply'}
                     </button>

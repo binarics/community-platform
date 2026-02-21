@@ -43,10 +43,10 @@ export default async function DiscoverPage({ searchParams }: {
     },
   })
 
-  // Get categories for filter
+  // Get categories for filter - FIX: Use PUBLISHED status
   const categories = await prisma.event.findMany({
     where: {
-      status: 'APPROVED',
+      status: 'PUBLISHED',
       startDate: { gte: new Date() },
       category: { not: null },
     },
@@ -180,9 +180,9 @@ export default async function DiscoverPage({ searchParams }: {
                 >
                   {/* Image or Gradient Header */}
                   <div className="h-48 bg-gradient-to-br from-sage-100 via-terracotta-50 to-sage-50 relative overflow-hidden">
-                    {event.imageUrl ? (
+                    {event.image ? (
                       <img
-                        src={event.imageUrl}
+                        src={event.image}
                         alt={event.title || 'Event'}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />

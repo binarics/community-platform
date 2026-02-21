@@ -6,10 +6,10 @@ import { useRouter } from 'next/navigation'
 interface EventFormProps {
   masjidId: string
   masjidName: string
-  organizerId: string
+  organiserId: string
 }
 
-export function EventForm({ masjidId, masjidName, organizerId }: EventFormProps) {
+export function EventForm({ masjidId, masjidName, organiserId }: EventFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -46,7 +46,7 @@ export function EventForm({ masjidId, masjidName, organizerId }: EventFormProps)
           ...formData,
           slug,
           masjidId,
-          organizerId,
+          organiserId,
           startDate: dateValue.toISOString(),
           endDate: dateValue.toISOString(),
           maxAttendees: formData.maxAttendees ? parseInt(formData.maxAttendees) : null,

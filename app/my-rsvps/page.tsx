@@ -18,6 +18,7 @@ export default async function MyRSVPsPage() {
       event: {
         include: {
           organisation: true,
+          masjid: true, // FIX: Include masjid
         },
       },
     },
@@ -83,6 +84,9 @@ export default async function MyRSVPsPage() {
             <div className="grid md:grid-cols-2 gap-6">
               {upcoming.map(({ event, status, guests }) => {
                 const startDate = new Date(event.startDate)
+                // FIX: Handle both masjid and organisation
+                const orgName = event.masjid?.name || event.organisation?.name || 'Community Event'
+                
                 return (
                   <Link
                     key={event.id}
@@ -103,7 +107,7 @@ export default async function MyRSVPsPage() {
                           {event.title}
                         </h3>
                         <div className="text-sm text-sage-500 mb-2">
-                          {event.organisation?.name}
+                          {orgName}
                         </div>
                         <div className="flex items-center gap-2 text-sm">
                           <span className="badge bg-sage-100 text-sage-700">

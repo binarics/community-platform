@@ -35,7 +35,8 @@ export async function POST(request: Request, { params }: { params: { slug: strin
 
     // If replying, verify parent comment exists
     if (parentId) {
-      const parentComment = await prisma.eventComment.findUnique({
+      // FIX: Use 'Comment' model, not 'EventComment'
+      const parentComment = await prisma.comment.findUnique({
         where: { id: parentId },
       })
 
@@ -44,8 +45,8 @@ export async function POST(request: Request, { params }: { params: { slug: strin
       }
     }
 
-    // Create comment
-    const comment = await prisma.eventComment.create({
+    // Create comment - FIX: Use 'Comment' model, not 'EventComment'
+    const comment = await prisma.comment.create({
       data: {
         eventId: event.id,
         userId: session.user.id,
