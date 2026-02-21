@@ -27,33 +27,37 @@ export default async function ClientsPage() {
     redirect('/counsellor/setup')
   }
 
-  // Get ONLY clients assigned to this counsellor
-  const clientRelations = await prisma.clientCounsellor.findMany({
-    where: {
-      counsellorId: profile.id,
-      isActive: true,
-    },
+  // Collect client IDs from both explicit assignments AND bookings so both
+  // lists stay in sync — a client booked directly (without going through
+  // "onboard client") will now appear here too.
+  const [clientRelations, bookingRows] = await Promise.all([
+    prisma.clientCounsellor.findMany({
+      where: { counsellorId: profile.id, isActive: true },
+      select: { clientId: true },
+    }),
+    prisma.booking.findMany({
+      where: { counsellorId: profile.id },
+      select: { clientId: true },
+      distinct: ['clientId'],
+    }),
+  ])
+
+  const assignedIds = new Set(clientRelations.map((r) => r.clientId))
+  const allClientIds = [
+    ...assignedIds,
+    ...bookingRows.map((b) => b.clientId).filter((id) => !assignedIds.has(id)),
+  ]
+
+  const clients = await prisma.user.findMany({
+    where: { id: { in: allClientIds } },
     include: {
-      client: {
-        include: {
-          clientBookings: {
-            where: { counsellorId: profile.id },
-            select: {
-              id: true,
-              status: true,
-              startTime: true,
-            },
-            orderBy: { startTime: 'desc' },
-          },
-        },
+      clientBookings: {
+        where: { counsellorId: profile.id },
+        select: { id: true, status: true, startTime: true },
+        orderBy: { startTime: 'desc' },
       },
     },
-    orderBy: {
-      assignedAt: 'desc',
-    },
   })
-
-  const clients = clientRelations.map((rel) => rel.client)
 
   // Calculate stats
   const activeClients = clients.filter((c) => {
