@@ -12,8 +12,12 @@ export default async function CounsellorSetupPage() {
     redirect('/login')
   }
 
-  // Check if user is a counsellor
-  if (session.user.role !== 'COUNSELLOR' && session.user.role !== 'SUPER_ADMIN') {
+  // Check if user is a counsellor - super admins should not complete counsellor setup
+  if (session.user.role === 'SUPER_ADMIN') {
+    redirect('/counsellor/dashboard')
+  }
+
+  if (session.user.role !== 'COUNSELLOR') {
     redirect('/')
   }
 
