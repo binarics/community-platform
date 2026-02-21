@@ -318,7 +318,7 @@ export default async function SuperAdminDashboard() {
             ⚡ Quick Admin Actions
           </h3>
           <div className="grid md:grid-cols-3 gap-4">
-            <Link href="/counsellor-dashboard" className="btn btn-outline w-full">
+            <Link href="/counsellor/dashboard" className="btn btn-outline w-full">
               🧠 View Counsellor Dashboard
             </Link>
             <Link href="/dashboard" className="btn btn-outline w-full">

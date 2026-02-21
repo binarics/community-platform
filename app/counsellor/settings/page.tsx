@@ -9,7 +9,7 @@ export default async function CounsellorSettingsPage() {
   const session = await getServerSession(authOptions)
 
   if (!session || !['COUNSELLOR', 'SUPER_ADMIN'].includes(session.user.role)) {
-    redirect('/counsellor-dashboard')
+    redirect('/counsellor/dashboard')
   }
 
   const profile = await prisma.counsellorProfile.findFirst({
@@ -24,7 +24,7 @@ export default async function CounsellorSettingsPage() {
         {/* Header */}
         <div className="mb-8">
           <Link
-            href="/counsellor-dashboard"
+            href="/counsellor/dashboard"
             className="text-sage-500 hover:text-sage-600 font-semibold text-sm mb-4 inline-block"
           >
             ← Back to Dashboard

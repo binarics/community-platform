@@ -32,12 +32,12 @@ export default async function BookingDetailPage({ params }: { params: { id: stri
   })
 
   if (!booking) {
-    redirect('/counsellor-dashboard')
+    redirect('/counsellor/dashboard')
   }
 
   // Check authorization
   if (session.user.role !== 'SUPER_ADMIN' && booking.counsellor.userId !== session.user.id) {
-    redirect('/counsellor-dashboard')
+    redirect('/counsellor/dashboard')
   }
 
   // Calculate duration
@@ -56,7 +56,7 @@ export default async function BookingDetailPage({ params }: { params: { id: stri
         {/* Header */}
         <div className="mb-8">
           <Link 
-            href="/counsellor-dashboard" 
+            href="/counsellor/dashboard" 
             className="text-sage-500 hover:text-sage-600 font-semibold text-sm mb-4 inline-block"
           >
             ← Back to Dashboard

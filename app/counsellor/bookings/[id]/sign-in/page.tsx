@@ -28,12 +28,12 @@ export default async function SignInPage({ params }: { params: { id: string } })
   })
 
   if (!booking) {
-    redirect('/counsellor-dashboard')
+    redirect('/counsellor/dashboard')
   }
 
   // Check authorization
   if (session.user.role !== 'SUPER_ADMIN' && booking.counsellor.userId !== session.user.id) {
-    redirect('/counsellor-dashboard')
+    redirect('/counsellor/dashboard')
   }
 
   // Check if already signed in

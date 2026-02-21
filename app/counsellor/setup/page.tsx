@@ -23,7 +23,7 @@ export default async function CounsellorSetupPage() {
   })
 
   if (existingProfile) {
-    redirect('/counsellor-dashboard')
+    redirect('/counsellor/dashboard')
   }
 
   // Get available organisations (therapy centres)

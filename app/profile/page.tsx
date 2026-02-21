@@ -102,7 +102,7 @@ export default async function ProfilePage() {
                 )}
                 {['SUPER_ADMIN', 'COUNSELLOR'].includes(user.role) && (
                   <a
-                    href="/counsellor-dashboard"
+                    href="/counsellor/dashboard"
                     className="block p-3 hover:bg-sage-50 rounded-lg transition"
                   >
                     🧠 Counsellor Dashboard

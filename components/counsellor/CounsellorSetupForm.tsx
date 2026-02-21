@@ -148,7 +148,7 @@ export function CounsellorSetupForm({ userId, userName, userEmail, organisations
       }
 
       // Success - redirect to dashboard
-      router.push('/counsellor-dashboard?setup=complete')
+      router.push('/counsellor/dashboard?setup=complete')
     } catch (error) {
       console.error('Setup error:', error)
       setError('Something went wrong')
