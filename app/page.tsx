@@ -5,7 +5,7 @@ import { Navigation } from '@/components/Navigation'
 export default async function HomePage() {
   const upcomingEvents = await prisma.event.findMany({
     where: {
-      status: 'APPROVED',
+      status: 'PUBLISHED',
       startDate: { gte: new Date() },
     },
     include: {
