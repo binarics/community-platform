@@ -83,9 +83,14 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
               </h1>
               <p className="text-xl text-slate">{client.email}</p>
             </div>
-            <Link href={`/counsellor/bookings/new?clientId=${client.id}`} className="btn btn-primary">
-              + New Session
-            </Link>
+            <div className="flex gap-3">
+              <Link href={`/counsellor/clients/${client.id}/notes`} className="btn btn-outline">
+                📝 View All Notes
+              </Link>
+              <Link href={`/counsellor/bookings/new?clientId=${client.id}`} className="btn btn-primary">
+                + New Session
+              </Link>
+            </div>
           </div>
         </div>
 
