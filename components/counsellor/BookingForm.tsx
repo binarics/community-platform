@@ -3,10 +3,11 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { SearchableClientSelect } from './SearchableClientSelect'
 
 interface Client {
   id: string
-  name: string
+  name: string | null
   email: string
 }
 
@@ -14,7 +15,6 @@ interface Room {
   id: string
   name: string
   capacity: number
-  facilities?: string
 }
 
 interface BookingFormProps {
@@ -23,8 +23,6 @@ interface BookingFormProps {
   rooms: Room[]
   preSelectedClientId?: string
 }
-
-const SESSION_TYPES = ['INDIVIDUAL', 'COUPLES', 'GROUP', 'ASSESSMENT']
 
 export function BookingForm({ counsellorId, clients, rooms, preSelectedClientId }: BookingFormProps) {
   const router = useRouter()
@@ -35,68 +33,20 @@ export function BookingForm({ counsellorId, clients, rooms, preSelectedClientId 
   const [formData, setFormData] = useState({
     clientId: preSelectedClientId || '',
     date: '',
-    startTime: '',
+    time: '09:00',
     duration: '60',
     roomId: '',
     sessionType: 'INDIVIDUAL',
     notes: '',
   })
 
-  const [availableRooms, setAvailableRooms] = useState<Room[]>([])
-  const [checkingAvailability, setCheckingAvailability] = useState(false)
-
-  async function checkRoomAvailability() {
-    if (!formData.date || !formData.startTime || !formData.duration) {
-      return
-    }
-
-    setCheckingAvailability(true)
-
-    try {
-      const response = await fetch(
-        `/api/counsellor/rooms/available?date=${formData.date}&startTime=${formData.startTime}&duration=${formData.duration}`
-      )
-
-      const data = await response.json()
-
-      if (response.ok) {
-        setAvailableRooms(data.rooms)
-      } else {
-        setError('Failed to check room availability')
-      }
-    } catch (error) {
-      console.error('Availability check error:', error)
-      setError('Failed to check availability')
-    } finally {
-      setCheckingAvailability(false)
-    }
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
-
-    // Validation
-    if (!formData.clientId) {
-      setError('Please select a client')
-      return
-    }
-
-    if (!formData.date || !formData.startTime) {
-      setError('Please select date and time')
-      return
-    }
-
-    if (!formData.roomId) {
-      setError('Please select a room')
-      return
-    }
-
     setLoading(true)
 
     try {
-      // Calculate end time
-      const startDateTime = new Date(`${formData.date}T${formData.startTime}`)
+      const startDateTime = new Date(`${formData.date}T${formData.time}`)
       const endDateTime = new Date(startDateTime.getTime() + parseInt(formData.duration) * 60000)
 
       const response = await fetch('/api/counsellor/bookings', {
@@ -105,11 +55,13 @@ export function BookingForm({ counsellorId, clients, rooms, preSelectedClientId 
         body: JSON.stringify({
           counsellorId,
           clientId: formData.clientId,
-          roomId: formData.roomId,
+          roomId: formData.roomId || null,
           startTime: startDateTime.toISOString(),
           endTime: endDateTime.toISOString(),
           sessionType: formData.sessionType,
-          notes: formData.notes,
+          status: 'SCHEDULED',
+          paymentStatus: 'UNPAID',
+          notes: formData.notes || null,
         }),
       })
 
@@ -121,68 +73,32 @@ export function BookingForm({ counsellorId, clients, rooms, preSelectedClientId 
         return
       }
 
-      // Success - redirect to booking detail
-      router.push(`/counsellor/bookings/${data.booking.id}`)
+      router.push('/counsellor/calendar?success=booking-created')
       router.refresh()
     } catch (error) {
-      console.error('Booking creation error:', error)
       setError('Something went wrong')
       setLoading(false)
     }
   }
 
-  function handleNext() {
-    if (step === 1 && !formData.clientId) {
-      setError('Please select a client')
-      return
-    }
-
-    if (step === 2 && (!formData.date || !formData.startTime)) {
-      setError('Please select date and time')
-      return
-    }
-
-    if (step === 2) {
-      checkRoomAvailability()
-    }
-
-    setError('')
-    setStep(step + 1)
+  const canProceed = () => {
+    if (step === 1) return formData.clientId
+    if (step === 2) return formData.date && formData.time
+    if (step === 3) return true // Room is optional
+    return true
   }
-
-  function handleBack() {
-    setError('')
-    setStep(step - 1)
-  }
-
-  const selectedClient = clients.find(c => c.id === formData.clientId)
 
   return (
-    <form onSubmit={handleSubmit}>
-      {/* Progress Indicator */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          {[1, 2, 3, 4].map((s) => (
-            <div key={s} className="flex items-center flex-1">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
-                s === step ? 'bg-sage-500 text-white' :
-                s < step ? 'bg-sage-300 text-white' :
-                'bg-sage-100 text-slate'
-              }`}>
-                {s}
-              </div>
-              {s < 4 && (
-                <div className={`flex-1 h-1 mx-2 ${
-                  s < step ? 'bg-sage-300' : 'bg-sage-100'
-                }`}></div>
-              )}
-            </div>
-          ))}
-        </div>
-        <div className="flex justify-between mt-2 text-sm">
+    <form onSubmit={handleSubmit} className="space-y-8">
+      {/* Progress Steps */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4 text-sm">
           <span className={step === 1 ? 'font-semibold text-charcoal' : 'text-slate'}>Client</span>
+          <span className="text-sage-300">→</span>
           <span className={step === 2 ? 'font-semibold text-charcoal' : 'text-slate'}>Date & Time</span>
+          <span className="text-sage-300">→</span>
           <span className={step === 3 ? 'font-semibold text-charcoal' : 'text-slate'}>Room</span>
+          <span className="text-sage-300">→</span>
           <span className={step === 4 ? 'font-semibold text-charcoal' : 'text-slate'}>Details</span>
         </div>
       </div>
@@ -196,70 +112,39 @@ export function BookingForm({ counsellorId, clients, rooms, preSelectedClientId 
       {/* Step 1: Select Client */}
       {step === 1 && (
         <div>
-          <h3 className="font-display text-2xl font-bold text-charcoal mb-6">
-            Select Client
-          </h3>
+          <h3 className="font-display text-2xl font-bold text-charcoal mb-6">Select Client</h3>
 
           {clients.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">👥</div>
-              <h3 className="font-display text-xl font-bold text-charcoal mb-2">
-                No Clients Yet
-              </h3>
-              <p className="text-slate mb-6">
-                You need to onboard a client before booking a session
-              </p>
+              <h3 className="font-display text-xl font-bold text-charcoal mb-2">No Clients Yet</h3>
+              <p className="text-slate mb-6">You need to onboard a client before booking a session</p>
               <Link href="/counsellor/clients/onboard" className="btn btn-primary">
                 + Onboard First Client
               </Link>
             </div>
           ) : (
             <>
-              <div className="space-y-3 mb-8">
-                {clients.map((client) => (
-                  <label
-                    key={client.id}
-                    className={`block p-4 rounded-xl border-2 cursor-pointer transition ${
-                      formData.clientId === client.id
-                        ? 'border-sage-500 bg-sage-50'
-                        : 'border-sage-100 hover:border-sage-300'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="radio"
-                        name="clientId"
-                        value={client.id}
-                        checked={formData.clientId === client.id}
-                        onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
-                        className="w-5 h-5"
-                      />
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-terracotta-100 to-terracotta-200 flex items-center justify-center font-display text-lg font-bold text-terracotta-600">
-                        {client.name?.[0] || 'C'}
-                      </div>
-                      <div>
-                        <div className="font-semibold text-charcoal">{client.name}</div>
-                        <div className="text-sm text-slate">{client.email}</div>
-                      </div>
-                    </div>
-                  </label>
-                ))}
+              <div className="mb-6">
+                <label className="block font-semibold text-charcoal mb-2">
+                  Search and Select Client <span className="text-red-500">*</span>
+                </label>
+                <SearchableClientSelect
+                  clients={clients}
+                  value={formData.clientId}
+                  onChange={(id) => setFormData({ ...formData, clientId: id })}
+                  required
+                />
               </div>
 
-              <div className="flex items-center justify-between">
-                <Link 
-                  href="/counsellor/clients/onboard" 
-                  className="text-sm text-sage-500 hover:text-sage-600 font-semibold"
-                >
-                  + Add New Client
-                </Link>
+              <div className="flex gap-4">
                 <button
                   type="button"
-                  onClick={handleNext}
-                  disabled={!formData.clientId}
-                  className="btn btn-primary"
+                  onClick={() => setStep(2)}
+                  disabled={!canProceed()}
+                  className="btn btn-primary flex-1"
                 >
-                  Continue to Date & Time →
+                  Next: Date & Time →
                 </button>
               </div>
             </>
@@ -270,11 +155,9 @@ export function BookingForm({ counsellorId, clients, rooms, preSelectedClientId 
       {/* Step 2: Date & Time */}
       {step === 2 && (
         <div>
-          <h3 className="font-display text-2xl font-bold text-charcoal mb-6">
-            Select Date & Time
-          </h3>
+          <h3 className="font-display text-2xl font-bold text-charcoal mb-6">Date & Time</h3>
 
-          <div className="space-y-4 mb-8">
+          <div className="grid md:grid-cols-2 gap-6 mb-6">
             <div>
               <label className="block font-semibold text-charcoal mb-2">
                 Date <span className="text-red-500">*</span>
@@ -284,7 +167,7 @@ export function BookingForm({ counsellorId, clients, rooms, preSelectedClientId 
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                 min={new Date().toISOString().split('T')[0]}
-                className="w-full px-4 py-3 border-2 border-sage-100 rounded-xl focus:border-sage-500 focus:ring-4 focus:ring-sage-50 transition"
+                className="w-full px-4 py-3 border-2 border-sage-100 rounded-xl focus:border-sage-500 transition"
                 required
               />
             </div>
@@ -295,217 +178,177 @@ export function BookingForm({ counsellorId, clients, rooms, preSelectedClientId 
               </label>
               <input
                 type="time"
-                value={formData.startTime}
-                onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                className="w-full px-4 py-3 border-2 border-sage-100 rounded-xl focus:border-sage-500 focus:ring-4 focus:ring-sage-50 transition"
+                value={formData.time}
+                onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                className="w-full px-4 py-3 border-2 border-sage-100 rounded-xl focus:border-sage-500 transition"
                 required
               />
             </div>
+          </div>
 
-            <div>
-              <label className="block font-semibold text-charcoal mb-2">
-                Duration <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={formData.duration}
-                onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-                className="w-full px-4 py-3 border-2 border-sage-100 rounded-xl focus:border-sage-500 focus:ring-4 focus:ring-sage-50 transition"
-              >
-                <option value="30">30 minutes</option>
-                <option value="45">45 minutes</option>
-                <option value="60">1 hour</option>
-                <option value="90">1.5 hours</option>
-                <option value="120">2 hours</option>
-              </select>
-            </div>
+          <div className="mb-6">
+            <label className="block font-semibold text-charcoal mb-2">Duration</label>
+            <select
+              value={formData.duration}
+              onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+              className="w-full px-4 py-3 border-2 border-sage-100 rounded-xl focus:border-sage-500 transition"
+            >
+              <option value="30">30 minutes</option>
+              <option value="45">45 minutes</option>
+              <option value="60">1 hour</option>
+              <option value="90">1.5 hours</option>
+              <option value="120">2 hours</option>
+            </select>
           </div>
 
           <div className="flex gap-4">
-            <button
-              type="button"
-              onClick={handleBack}
-              className="btn btn-outline"
-            >
+            <button type="button" onClick={() => setStep(1)} className="btn btn-outline flex-1">
               ← Back
             </button>
             <button
               type="button"
-              onClick={handleNext}
-              disabled={!formData.date || !formData.startTime}
+              onClick={() => setStep(3)}
+              disabled={!canProceed()}
               className="btn btn-primary flex-1"
             >
-              Continue to Room Selection →
+              Next: Room →
             </button>
           </div>
         </div>
       )}
 
-      {/* Step 3: Select Room */}
+      {/* Step 3: Room Selection */}
       {step === 3 && (
         <div>
-          <h3 className="font-display text-2xl font-bold text-charcoal mb-6">
-            Select Room
-          </h3>
+          <h3 className="font-display text-2xl font-bold text-charcoal mb-6">Select Room (Optional)</h3>
 
-          {checkingAvailability ? (
-            <div className="text-center py-12">
-              <div className="text-4xl mb-4">⏳</div>
-              <div className="text-slate">Checking room availability...</div>
-            </div>
-          ) : availableRooms.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">🚫</div>
-              <h3 className="font-display text-xl font-bold text-charcoal mb-2">
-                No Rooms Available
-              </h3>
-              <p className="text-slate mb-6">
-                All rooms are booked for this time slot
-              </p>
-              <button
-                type="button"
-                onClick={handleBack}
-                className="btn btn-primary"
+          <div className="space-y-3 mb-6">
+            <label
+              className={`block p-4 rounded-xl border-2 cursor-pointer transition ${
+                formData.roomId === ''
+                  ? 'border-sage-500 bg-sage-50'
+                  : 'border-sage-100 hover:border-sage-300'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <input
+                  type="radio"
+                  name="roomId"
+                  value=""
+                  checked={formData.roomId === ''}
+                  onChange={(e) => setFormData({ ...formData, roomId: e.target.value })}
+                  className="w-5 h-5"
+                />
+                <div>
+                  <div className="font-semibold text-charcoal">No Room Required</div>
+                  <div className="text-sm text-slate">Online or off-site session</div>
+                </div>
+              </div>
+            </label>
+
+            {rooms.map((room) => (
+              <label
+                key={room.id}
+                className={`block p-4 rounded-xl border-2 cursor-pointer transition ${
+                  formData.roomId === room.id
+                    ? 'border-sage-500 bg-sage-50'
+                    : 'border-sage-100 hover:border-sage-300'
+                }`}
               >
-                Choose Different Time
-              </button>
-            </div>
-          ) : (
-            <>
-              <div className="space-y-3 mb-8">
-                {availableRooms.map((room) => (
-                  <label
-                    key={room.id}
-                    className={`block p-4 rounded-xl border-2 cursor-pointer transition ${
-                      formData.roomId === room.id
-                        ? 'border-sage-500 bg-sage-50'
-                        : 'border-sage-100 hover:border-sage-300'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <input
-                        type="radio"
-                        name="roomId"
-                        value={room.id}
-                        checked={formData.roomId === room.id}
-                        onChange={(e) => setFormData({ ...formData, roomId: e.target.value })}
-                        className="w-5 h-5 mt-1"
-                      />
-                      <div className="flex-1">
-                        <div className="font-semibold text-charcoal mb-1">{room.name}</div>
-                        <div className="text-sm text-slate">
-                          Capacity: {room.capacity} people
-                        </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="radio"
+                    name="roomId"
+                    value={room.id}
+                    checked={formData.roomId === room.id}
+                    onChange={(e) => setFormData({ ...formData, roomId: e.target.value })}
+                    className="w-5 h-5"
+                  />
+                  <div>
+                    <div className="font-semibold text-charcoal">{room.name}</div>
+                    <div className="text-sm text-slate">Capacity: {room.capacity} people</div>
+                  </div>
+                </div>
+              </label>
+            ))}
+          </div>
 
-                        {room.facilities && (
-                          <div className="mb-4">
-                            <div className="text-xs font-semibold uppercase text-slate mb-2">
-                               Facilities
-                            </div>
-                            <div className="flex flex-wrap gap-1">
-                              {JSON.parse(room.facilities).map((facility: string, i: number) => (
-                                <span key={i} className="text-xs px-2 py-1 bg-sage-50 text-sage-700 rounded-full">
-                                  {facility}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                )}
-                      </div>
-                      <span className="badge bg-green-100 text-green-700">
-                        Available
-                      </span>
-                    </div>
-                  </label>
-                ))}
-              </div>
-
-              <div className="flex gap-4">
-                <button
-                  type="button"
-                  onClick={handleBack}
-                  className="btn btn-outline"
-                >
-                  ← Back
-                </button>
-                <button
-                  type="button"
-                  onClick={handleNext}
-                  disabled={!formData.roomId}
-                  className="btn btn-primary flex-1"
-                >
-                  Continue to Details →
-                </button>
-              </div>
-            </>
-          )}
+          <div className="flex gap-4">
+            <button type="button" onClick={() => setStep(2)} className="btn btn-outline flex-1">
+              ← Back
+            </button>
+            <button type="button" onClick={() => setStep(4)} className="btn btn-primary flex-1">
+              Next: Details →
+            </button>
+          </div>
         </div>
       )}
 
       {/* Step 4: Session Details */}
       {step === 4 && (
         <div>
-          <h3 className="font-display text-2xl font-bold text-charcoal mb-6">
-            Session Details
-          </h3>
+          <h3 className="font-display text-2xl font-bold text-charcoal mb-6">Session Details</h3>
 
-          <div className="space-y-4 mb-8">
-            <div>
-              <label className="block font-semibold text-charcoal mb-2">
-                Session Type
-              </label>
-              <select
-                value={formData.sessionType}
-                onChange={(e) => setFormData({ ...formData, sessionType: e.target.value })}
-                className="w-full px-4 py-3 border-2 border-sage-100 rounded-xl focus:border-sage-500 focus:ring-4 focus:ring-sage-50 transition"
-              >
-                {SESSION_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className="mb-6">
+            <label className="block font-semibold text-charcoal mb-2">Session Type</label>
+            <select
+              value={formData.sessionType}
+              onChange={(e) => setFormData({ ...formData, sessionType: e.target.value })}
+              className="w-full px-4 py-3 border-2 border-sage-100 rounded-xl focus:border-sage-500 transition"
+            >
+              <option value="INDIVIDUAL">Individual Therapy</option>
+              <option value="COUPLES">Couples Therapy</option>
+              <option value="FAMILY">Family Therapy</option>
+              <option value="GROUP">Group Therapy</option>
+              <option value="ASSESSMENT">Initial Assessment</option>
+            </select>
+          </div>
 
-            <div>
-              <label className="block font-semibold text-charcoal mb-2">
-                Notes (Optional)
-              </label>
-              <textarea
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                rows={4}
-                placeholder="Any additional notes for this session..."
-                className="w-full px-4 py-3 border-2 border-sage-100 rounded-xl focus:border-sage-500 focus:ring-4 focus:ring-sage-50 transition resize-none"
-              />
-            </div>
+          <div className="mb-6">
+            <label className="block font-semibold text-charcoal mb-2">Notes (Optional)</label>
+            <textarea
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              rows={4}
+              placeholder="Add any notes about this session..."
+              className="w-full px-4 py-3 border-2 border-sage-100 rounded-xl focus:border-sage-500 transition resize-none"
+            />
           </div>
 
           {/* Summary */}
-          <div className="p-6 bg-sage-50 rounded-xl mb-8">
-            <div className="font-semibold text-charcoal mb-4">Booking Summary</div>
+          <div className="p-6 bg-sage-50 rounded-xl border border-sage-100 mb-6">
+            <div className="font-semibold text-charcoal mb-3">Booking Summary</div>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-slate">Client:</span>
-                <span className="font-semibold text-charcoal">{selectedClient?.name}</span>
+                <span className="font-semibold text-charcoal">
+                  {clients.find((c) => c.id === formData.clientId)?.name}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate">Date:</span>
                 <span className="font-semibold text-charcoal">
-                  {new Date(formData.date).toLocaleDateString()}
+                  {formData.date &&
+                    new Date(formData.date).toLocaleDateString('en-GB', {
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                    })}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate">Time:</span>
-                <span className="font-semibold text-charcoal">{formData.startTime}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate">Duration:</span>
-                <span className="font-semibold text-charcoal">{formData.duration} minutes</span>
+                <span className="font-semibold text-charcoal">
+                  {formData.time} ({formData.duration} mins)
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate">Room:</span>
                 <span className="font-semibold text-charcoal">
-                  {availableRooms.find(r => r.id === formData.roomId)?.name}
+                  {formData.roomId
+                    ? rooms.find((r) => r.id === formData.roomId)?.name
+                    : 'No room'}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -516,18 +359,10 @@ export function BookingForm({ counsellorId, clients, rooms, preSelectedClientId 
           </div>
 
           <div className="flex gap-4">
-            <button
-              type="button"
-              onClick={handleBack}
-              className="btn btn-outline"
-            >
+            <button type="button" onClick={() => setStep(3)} className="btn btn-outline flex-1">
               ← Back
             </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn btn-primary flex-1"
-            >
+            <button type="submit" disabled={loading} className="btn btn-primary flex-1">
               {loading ? 'Creating Booking...' : 'Confirm Booking'}
             </button>
           </div>

@@ -105,6 +105,12 @@ export default async function CalendarPage({ searchParams }: {
               <Link href="/counsellor/calendar/availability" className="btn btn-outline">
                 ⚙️ Set Availability
               </Link>
+              <Link 
+                href="/counsellor/bookings/add-past"
+                className="btn btn-outline"
+              >
+                + Add Past Session
+              </Link>
             </div>
           </div>
         </div>
