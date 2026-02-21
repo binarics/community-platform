@@ -96,22 +96,23 @@ export default async function DashboardPage() {
 
         {/* Quick Actions */}
         <div className="grid md:grid-cols-4 gap-4 mb-12">
-          <button className="card p-6 text-center hover:-translate-y-1 transition cursor-pointer">
+          <Link href="/admin/masjid" className="card p-6 text-center hover:-translate-y-1 transition">
             <div className="text-3xl mb-2">✨</div>
             <div className="font-semibold text-charcoal">Create Event</div>
-          </button>
+            <div className="text-xs text-slate mt-1">Via Masjid panel</div>
+          </Link>
           <Link href="/discover" className="card p-6 text-center hover:-translate-y-1 transition">
             <div className="text-3xl mb-2">👁️</div>
             <div className="font-semibold text-charcoal">View Events</div>
           </Link>
-          <button className="card p-6 text-center hover:-translate-y-1 transition cursor-pointer">
-            <div className="text-3xl mb-2">📊</div>
-            <div className="font-semibold text-charcoal">Analytics</div>
-          </button>
-          <button className="card p-6 text-center hover:-translate-y-1 transition cursor-pointer">
+          <Link href="/masjids" className="card p-6 text-center hover:-translate-y-1 transition">
+            <div className="text-3xl mb-2">🕌</div>
+            <div className="font-semibold text-charcoal">Browse Masjids</div>
+          </Link>
+          <Link href="/settings" className="card p-6 text-center hover:-translate-y-1 transition">
             <div className="text-3xl mb-2">⚙️</div>
             <div className="font-semibold text-charcoal">Settings</div>
-          </button>
+          </Link>
         </div>
 
         {/* Events Table */}
@@ -119,9 +120,9 @@ export default async function DashboardPage() {
           <h2 className="font-display text-3xl font-bold text-charcoal">
             Your Events
           </h2>
-          <button className="btn btn-primary">
+          <Link href="/admin/masjid" className="btn btn-primary">
             + Create Event
-          </button>
+          </Link>
         </div>
 
         {events.length === 0 ? (
@@ -133,9 +134,9 @@ export default async function DashboardPage() {
             <p className="text-slate mb-6">
               Create your first event to start engaging with your community
             </p>
-            <button className="btn btn-primary">
+            <Link href="/admin/masjid" className="btn btn-primary">
               Create Your First Event
-            </button>
+            </Link>
           </div>
         ) : (
           <div className="card overflow-hidden">

@@ -58,6 +58,16 @@ export function Navigation() {
             >
               Counselling
             </Link>
+            <Link
+              href="/masjids"
+              className={`font-medium transition ${
+                isActive('/masjids')
+                  ? 'text-sage-600'
+                  : 'text-slate hover:text-sage-500'
+              }`}
+            >
+              Masjids
+            </Link>
 
             {session ? (
               <>
@@ -215,6 +225,13 @@ export function Navigation() {
               >
                 💬 Counselling
               </Link>
+              <Link
+                href="/masjids"
+                className="block px-4 py-3 rounded-lg hover:bg-sage-50 transition text-charcoal font-medium"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                🕌 Masjids
+              </Link>
 
               {session ? (
                 <>
@@ -261,6 +278,20 @@ export function Navigation() {
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     👤 My Profile
+                  </Link>
+                  <Link
+                    href="/my-rsvps"
+                    className="block px-4 py-3 rounded-lg hover:bg-sage-50 transition text-charcoal font-medium"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    🎫 My RSVPs
+                  </Link>
+                  <Link
+                    href="/settings"
+                    className="block px-4 py-3 rounded-lg hover:bg-sage-50 transition text-charcoal font-medium"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    ⚙️ Settings
                   </Link>
 
                   <button

@@ -13,37 +13,36 @@ export default async function SuperAdminDashboard() {
   }
 
   // Get comprehensive stats
-  const stats = {
-    totalUsers: await prisma.user.count(),
-    totalEvents: await prisma.event.count(),
-    totalOrganisations: await prisma.organisation.count(),
-    totalBookings: await prisma.booking.count(),
-    totalCourses: await prisma.course.count(),
-    pendingEvents: await prisma.event.count({ where: { status: 'PENDING' } }),
-    
-    usersByRole: await prisma.user.groupBy({
-      by: ['role'],
-      _count: true,
+  const [
+    totalUsers,
+    totalEvents,
+    totalMasjids,
+    totalBookings,
+    totalCourses,
+    pendingEvents,
+    pendingRoleRequests,
+    usersByRole,
+    eventsByStatus,
+    recentUsers,
+    recentEvents,
+  ] = await Promise.all([
+    prisma.user.count(),
+    prisma.event.count(),
+    prisma.masjid.count(),
+    prisma.booking.count(),
+    prisma.course.count(),
+    prisma.event.count({ where: { status: 'PENDING' } }),
+    prisma.roleRequest.count({ where: { status: 'PENDING' } }),
+    prisma.user.groupBy({ by: ['role'], _count: true }),
+    prisma.event.groupBy({ by: ['status'], _count: true }),
+    prisma.user.findMany({ orderBy: { createdAt: 'desc' }, take: 5 }),
+    prisma.event.findMany({
+      where: { status: 'PENDING' },
+      include: { masjid: true, organiser: true },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
     }),
-    
-    eventsByStatus: await prisma.event.groupBy({
-      by: ['status'],
-      _count: true,
-    }),
-  }
-
-  // Recent activity
-  const recentUsers = await prisma.user.findMany({
-    orderBy: { createdAt: 'desc' },
-    take: 5,
-  })
-
-  const recentEvents = await prisma.event.findMany({
-    where: { status: 'PENDING' },
-    include: { organisation: true, organiser: true },
-    orderBy: { createdAt: 'desc' },
-    take: 5,
-  })
+  ])
 
   return (
     <div className="min-h-screen bg-cream">
@@ -52,70 +51,42 @@ export default async function SuperAdminDashboard() {
       <div className="max-w-7xl mx-auto px-8 py-12">
         {/* Header */}
         <div className="mb-12">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-50 text-red-700 rounded-full text-sm font-semibold mb-4">
-                <span>👑</span>
-                <span>SUPER ADMIN ACCESS</span>
-              </div>
-              <h1 className="font-display text-5xl font-bold text-charcoal mb-2">
-                System Administration
-              </h1>
-              <p className="text-xl text-slate">
-                Complete control over all platform data and users
-              </p>
-            </div>
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-50 text-red-700 rounded-full text-sm font-semibold mb-4">
+            <span>👑</span>
+            <span>SUPER ADMIN ACCESS</span>
           </div>
+          <h1 className="font-display text-5xl font-bold text-charcoal mb-2">
+            System Administration
+          </h1>
+          <p className="text-xl text-slate">
+            Complete control over all platform data and users
+          </p>
         </div>
 
         {/* System Stats */}
         <div className="grid md:grid-cols-4 gap-6 mb-12">
           <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">
-              Total Users
-            </div>
-            <div className="font-display text-4xl font-bold text-charcoal mb-1">
-              {stats.totalUsers}
-            </div>
-            <div className="text-sm text-sage-500">
-              Registered accounts
-            </div>
+            <div className="text-sm font-semibold uppercase text-slate mb-2">Total Users</div>
+            <div className="font-display text-4xl font-bold text-charcoal mb-1">{totalUsers}</div>
+            <div className="text-sm text-sage-500">Registered accounts</div>
           </div>
 
           <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">
-              Total Events
-            </div>
-            <div className="font-display text-4xl font-bold text-charcoal mb-1">
-              {stats.totalEvents}
-            </div>
-            <div className="text-sm text-amber-600">
-              {stats.pendingEvents} pending review
-            </div>
+            <div className="text-sm font-semibold uppercase text-slate mb-2">Total Events</div>
+            <div className="font-display text-4xl font-bold text-charcoal mb-1">{totalEvents}</div>
+            <div className="text-sm text-amber-600">{pendingEvents} pending review</div>
           </div>
 
           <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">
-              Organisations
-            </div>
-            <div className="font-display text-4xl font-bold text-charcoal mb-1">
-              {stats.totalOrganisations}
-            </div>
-            <div className="text-sm text-sage-500">
-              Masjids & Centres
-            </div>
+            <div className="text-sm font-semibold uppercase text-slate mb-2">Masjids</div>
+            <div className="font-display text-4xl font-bold text-charcoal mb-1">{totalMasjids}</div>
+            <div className="text-sm text-sage-500">Registered masjids</div>
           </div>
 
           <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">
-              Total Bookings
-            </div>
-            <div className="font-display text-4xl font-bold text-charcoal mb-1">
-              {stats.totalBookings}
-            </div>
-            <div className="text-sm text-sage-500">
-              Counselling sessions
-            </div>
+            <div className="text-sm font-semibold uppercase text-slate mb-2">Total Bookings</div>
+            <div className="font-display text-4xl font-bold text-charcoal mb-1">{totalBookings}</div>
+            <div className="text-sm text-sage-500">Counselling sessions</div>
           </div>
         </div>
 
@@ -126,31 +97,25 @@ export default async function SuperAdminDashboard() {
               <div className="text-5xl">👥</div>
               <span className="badge bg-red-100 text-red-700">Root</span>
             </div>
-            <h2 className="font-display text-2xl font-bold text-charcoal mb-2">
-              User Management
-            </h2>
+            <h2 className="font-display text-2xl font-bold text-charcoal mb-2">User Management</h2>
             <p className="text-slate mb-4">
               View all users, change roles, edit profiles, delete accounts
             </p>
-            <div className="text-sm text-slate">
-              {stats.totalUsers} total users
-            </div>
+            <div className="text-sm text-slate">{totalUsers} total users</div>
           </Link>
 
           <Link href="/admin/events" className="card p-8 hover:-translate-y-1 transition">
             <div className="flex items-start justify-between mb-4">
               <div className="text-5xl">📅</div>
-              <span className="badge bg-amber-100 text-amber-700">{stats.pendingEvents}</span>
+              {pendingEvents > 0 && (
+                <span className="badge bg-amber-100 text-amber-700">{pendingEvents} pending</span>
+              )}
             </div>
-            <h2 className="font-display text-2xl font-bold text-charcoal mb-2">
-              Event Moderation
-            </h2>
+            <h2 className="font-display text-2xl font-bold text-charcoal mb-2">Event Moderation</h2>
             <p className="text-slate mb-4">
               Approve, reject, edit, or delete any event on the platform
             </p>
-            <div className="text-sm text-slate">
-              {stats.pendingEvents} pending approval
-            </div>
+            <div className="text-sm text-slate">{pendingEvents} pending approval</div>
           </Link>
 
           <Link href="/admin/bookings" className="card p-8 hover:-translate-y-1 transition">
@@ -158,67 +123,53 @@ export default async function SuperAdminDashboard() {
               <div className="text-5xl">🗓️</div>
               <span className="badge bg-sage-100 text-sage-700">All</span>
             </div>
-            <h2 className="font-display text-2xl font-bold text-charcoal mb-2">
-              Booking Management
-            </h2>
+            <h2 className="font-display text-2xl font-bold text-charcoal mb-2">Booking Management</h2>
             <p className="text-slate mb-4">
-              View all counselling bookings, edit, cancel, or manage payments
+              View all counselling bookings, cancel, or manage payments
             </p>
-            <div className="text-sm text-slate">
-              {stats.totalBookings} total bookings
-            </div>
+            <div className="text-sm text-slate">{totalBookings} total bookings</div>
           </Link>
 
-          <Link href="/admin/organisations" className="card p-8 hover:-translate-y-1 transition">
+          <Link href="/admin/masjid" className="card p-8 hover:-translate-y-1 transition">
             <div className="flex items-start justify-between mb-4">
-              <div className="text-5xl">🏢</div>
+              <div className="text-5xl">🕌</div>
               <span className="badge bg-sage-100 text-sage-700">Root</span>
             </div>
-            <h2 className="font-display text-2xl font-bold text-charcoal mb-2">
-              Organisations
-            </h2>
+            <h2 className="font-display text-2xl font-bold text-charcoal mb-2">Masjids</h2>
             <p className="text-slate mb-4">
-              Manage Masjids, therapy centres, verify organisations
+              Manage masjids, verify organisations, assign admins and events
             </p>
-            <div className="text-sm text-slate">
-              {stats.totalOrganisations} organisations
-            </div>
+            <div className="text-sm text-slate">{totalMasjids} masjids</div>
           </Link>
 
-          <Link href="/admin/courses" className="card p-8 hover:-translate-y-1 transition">
+          <Link href="/admin/role-requests" className="card p-8 hover:-translate-y-1 transition">
             <div className="flex items-start justify-between mb-4">
-              <div className="text-5xl">📚</div>
-              <span className="badge bg-sage-100 text-sage-700">All</span>
+              <div className="text-5xl">⬆️</div>
+              {pendingRoleRequests > 0 && (
+                <span className="badge bg-amber-100 text-amber-700">{pendingRoleRequests} pending</span>
+              )}
             </div>
-            <h2 className="font-display text-2xl font-bold text-charcoal mb-2">
-              Course Management
-            </h2>
+            <h2 className="font-display text-2xl font-bold text-charcoal mb-2">Role Requests</h2>
             <p className="text-slate mb-4">
-              View, edit, approve, or delete therapeutic courses
+              Review and approve requests for role upgrades from community members
             </p>
-            <div className="text-sm text-slate">
-              {stats.totalCourses} courses
-            </div>
+            <div className="text-sm text-slate">{pendingRoleRequests} awaiting review</div>
           </Link>
 
-          <Link href="/admin/database" className="card p-8 hover:-translate-y-1 transition border-2 border-red-200">
+          <Link href="/counsellor/dashboard" className="card p-8 hover:-translate-y-1 transition">
             <div className="flex items-start justify-between mb-4">
-              <div className="text-5xl">💾</div>
-              <span className="badge bg-red-100 text-red-700">Danger</span>
+              <div className="text-5xl">🧠</div>
+              <span className="badge bg-sage-100 text-sage-700">View</span>
             </div>
-            <h2 className="font-display text-2xl font-bold text-charcoal mb-2">
-              Database Editor
-            </h2>
+            <h2 className="font-display text-2xl font-bold text-charcoal mb-2">Counsellor View</h2>
             <p className="text-slate mb-4">
-              Direct access to edit Prisma tables and database records
+              Access the counsellor dashboard to view bookings, clients, and sessions
             </p>
-            <div className="text-sm text-red-600 font-semibold">
-              ⚠️ Advanced users only
-            </div>
+            <div className="text-sm text-slate">{totalCourses} courses published</div>
           </Link>
         </div>
 
-        {/* Quick Actions */}
+        {/* Activity Feed */}
         <div className="grid md:grid-cols-2 gap-6 mb-12">
           {/* Pending Events */}
           {recentEvents.length > 0 && (
@@ -227,7 +178,7 @@ export default async function SuperAdminDashboard() {
                 <h3 className="font-display text-xl font-bold text-charcoal">
                   Pending Event Approvals
                 </h3>
-                <Link href="/admin/events?status=pending" className="text-sage-500 hover:text-sage-600 font-semibold text-sm">
+                <Link href="/admin/events" className="text-sage-500 hover:text-sage-600 font-semibold text-sm">
                   View All →
                 </Link>
               </div>
@@ -239,15 +190,11 @@ export default async function SuperAdminDashboard() {
                     className="block p-4 bg-amber-50 hover:bg-amber-100 rounded-xl transition"
                   >
                     <div className="flex justify-between items-start mb-2">
-                      <div className="font-semibold text-charcoal">
-                        {event.title}
-                      </div>
-                      <span className="badge bg-amber-100 text-amber-700">
-                        Pending
-                      </span>
+                      <div className="font-semibold text-charcoal">{event.title}</div>
+                      <span className="badge bg-amber-100 text-amber-700">Pending</span>
                     </div>
                     <div className="text-sm text-slate">
-                      {event.organisation.name} • {event.organiser.name}
+                      {event.masjid?.name || 'No masjid'} • {event.organiser?.name || 'Unknown'}
                     </div>
                     <div className="text-xs text-slate mt-1">
                       Created {new Date(event.createdAt).toLocaleDateString()}
@@ -261,33 +208,28 @@ export default async function SuperAdminDashboard() {
           {/* Recent Users */}
           <div className="card p-6">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="font-display text-xl font-bold text-charcoal">
-                Recent Registrations
-              </h3>
+              <h3 className="font-display text-xl font-bold text-charcoal">Recent Registrations</h3>
               <Link href="/admin/users" className="text-sage-500 hover:text-sage-600 font-semibold text-sm">
                 View All →
               </Link>
             </div>
             <div className="space-y-3">
               {recentUsers.map(user => (
-                <Link
+                <div
                   key={user.id}
-                  href={`/admin/users/${user.id}`}
-                  className="block p-4 bg-sage-50 hover:bg-sage-100 rounded-xl transition"
+                  className="p-4 bg-sage-50 rounded-xl"
                 >
                   <div className="flex justify-between items-start mb-2">
-                    <div className="font-semibold text-charcoal">
-                      {user.name || 'No name'}
-                    </div>
+                    <div className="font-semibold text-charcoal">{user.name || 'No name'}</div>
                     <span className="badge bg-sage-100 text-sage-700 text-xs">
-                      {user.role}
+                      {user.role.replace(/_/g, ' ')}
                     </span>
                   </div>
                   <div className="text-sm text-slate">{user.email}</div>
                   <div className="text-xs text-slate mt-1">
                     Joined {new Date(user.createdAt).toLocaleDateString()}
                   </div>
-                </Link>
+                </div>
               ))}
             </div>
           </div>
@@ -299,38 +241,35 @@ export default async function SuperAdminDashboard() {
             User Distribution by Role
           </h3>
           <div className="grid md:grid-cols-6 gap-4">
-            {stats.usersByRole.map(({ role, _count }) => (
-              <div key={role} className="text-center p-4 bg-sage-50 rounded-xl">
-                <div className="font-display text-2xl font-bold text-charcoal mb-1">
-                  {_count}
-                </div>
+            {usersByRole.map(({ role, _count }) => (
+              <Link
+                key={role}
+                href={`/admin/users?role=${role}`}
+                className="text-center p-4 bg-sage-50 hover:bg-sage-100 rounded-xl transition"
+              >
+                <div className="font-display text-2xl font-bold text-charcoal mb-1">{_count}</div>
                 <div className="text-xs text-slate uppercase font-semibold">
-                  {role.replace('_', ' ')}
+                  {role.replace(/_/g, ' ')}
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
 
-        {/* System Access Links */}
+        {/* Quick Actions */}
         <div className="card p-8 bg-gradient-to-br from-red-50 to-amber-50 border-2 border-red-100">
-          <h3 className="font-display text-2xl font-bold text-charcoal mb-4">
-            ⚡ Quick Admin Actions
-          </h3>
+          <h3 className="font-display text-2xl font-bold text-charcoal mb-4">⚡ Quick Actions</h3>
           <div className="grid md:grid-cols-3 gap-4">
+            <Link href="/admin/masjid/new" className="btn btn-outline w-full">
+              🕌 Create New Masjid
+            </Link>
             <Link href="/counsellor/dashboard" className="btn btn-outline w-full">
               🧠 View Counsellor Dashboard
             </Link>
-            <Link href="/dashboard" className="btn btn-outline w-full">
-              📊 View Organiser Dashboard
+            <Link href="/settings" className="btn btn-outline w-full">
+              ⚙️ Account Settings
             </Link>
-            <button className="btn btn-outline w-full">
-              🔧 System Settings
-            </button>
           </div>
-          <p className="text-sm text-slate mt-4">
-            As SUPER_ADMIN, you can access any dashboard and impersonate any user role
-          </p>
         </div>
       </div>
     </div>
