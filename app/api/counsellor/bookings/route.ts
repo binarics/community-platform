@@ -3,9 +3,11 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
+// GET - List all bookings for this counsellor
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions)
+    
     if (!session || !['COUNSELLOR', 'SUPER_ADMIN'].includes(session.user.role)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -14,25 +16,48 @@ export async function GET(request: Request) {
       where: { userId: session.user.id },
     })
 
+    if (!profile && session.user.role !== 'SUPER_ADMIN') {
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+    }
+
     const bookings = await prisma.booking.findMany({
       where: { counsellorId: profile?.id },
       include: {
-        client: true,
-        room: true,
-        sessionNotes: { select: { id: true } },
+        client: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        room: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        sessionNotes: {
+          select: {
+            id: true,
+            createdAt: true,
+          },
+        },
       },
       orderBy: { startTime: 'desc' },
     })
 
     return NextResponse.json({ bookings })
   } catch (error) {
+    console.error('Get bookings error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
+// POST - Create new booking
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions)
+    
     if (!session || !['COUNSELLOR', 'SUPER_ADMIN'].includes(session.user.role)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -40,43 +65,116 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { counsellorId, clientId, roomId, startTime, endTime, sessionType, notes } = body
 
-    // Check room availability
-    const conflictingBooking = await prisma.booking.findFirst({
+    // Validation
+    if (!counsellorId || !clientId || !startTime || !endTime) {
+      return NextResponse.json(
+        { error: 'Counsellor, client, start time, and end time are required' },
+        { status: 400 }
+      )
+    }
+
+    const start = new Date(startTime)
+    const end = new Date(endTime)
+
+    if (start >= end) {
+      return NextResponse.json(
+        { error: 'End time must be after start time' },
+        { status: 400 }
+      )
+    }
+
+    // Verify client is assigned to this counsellor
+    const clientRelation = await prisma.clientCounsellor.findUnique({
       where: {
-        roomId,
+        clientId_counsellorId: {
+          clientId,
+          counsellorId,
+        },
+      },
+    })
+
+    if (!clientRelation || !clientRelation.isActive) {
+      return NextResponse.json(
+        { error: 'Client is not assigned to this counsellor' },
+        { status: 403 }
+      )
+    }
+
+    // Check for counsellor availability conflicts
+    const counsellorConflict = await prisma.booking.findFirst({
+      where: {
+        counsellorId,
         status: { not: 'CANCELLED' },
         OR: [
-          { AND: [{ startTime: { lte: startTime } }, { endTime: { gt: startTime } }] },
-          { AND: [{ startTime: { lt: endTime } }, { endTime: { gte: endTime } }] },
-          { AND: [{ startTime: { gte: startTime } }, { endTime: { lte: endTime } }] },
+          { AND: [{ startTime: { lte: start } }, { endTime: { gt: start } }] },
+          { AND: [{ startTime: { lt: end } }, { endTime: { gte: end } }] },
+          { AND: [{ startTime: { gte: start } }, { endTime: { lte: end } }] },
         ],
       },
     })
 
-    if (conflictingBooking) {
-      return NextResponse.json({ error: 'Room not available' }, { status: 400 })
+    if (counsellorConflict) {
+      return NextResponse.json(
+        { error: 'Counsellor already has a booking at this time' },
+        { status: 409 }
+      )
     }
 
+    // If room specified, check room availability
+    if (roomId) {
+      const roomConflict = await prisma.booking.findFirst({
+        where: {
+          roomId,
+          status: { not: 'CANCELLED' },
+          OR: [
+            { AND: [{ startTime: { lte: start } }, { endTime: { gt: start } }] },
+            { AND: [{ startTime: { lt: end } }, { endTime: { gte: end } }] },
+            { AND: [{ startTime: { gte: start } }, { endTime: { lte: end } }] },
+          ],
+        },
+      })
+
+      if (roomConflict) {
+        return NextResponse.json(
+          { error: 'Room is not available at this time' },
+          { status: 409 }
+        )
+      }
+    }
+
+    // Create booking
     const booking = await prisma.booking.create({
       data: {
         counsellorId,
         clientId,
-        roomId,
-        startTime: new Date(startTime),
-        endTime: new Date(endTime),
+        roomId: roomId || null,
+        startTime: start,
+        endTime: end,
         sessionType: sessionType || 'INDIVIDUAL',
         status: 'SCHEDULED',
         paymentStatus: 'UNPAID',
         notes,
       },
       include: {
-        client: true,
-        room: true,
+        client: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        room: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     })
 
     return NextResponse.json({ booking, message: 'Booking created successfully' })
   } catch (error) {
+    console.error('Create booking error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

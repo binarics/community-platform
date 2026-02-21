@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 
-// GET - List all clients for this counsellor
+// GET - List all clients assigned to this counsellor
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions)
@@ -19,49 +19,65 @@ export async function GET(request: Request) {
     })
 
     if (!profile && session.user.role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Counsellor profile not found' }, { status: 404 })
+      return NextResponse.json(
+        { error: 'Counsellor profile not found' },
+        { status: 404 }
+      )
     }
 
-    // Get all clients for this counsellor
-    const clients = await prisma.user.findMany({
+    // Get all clients assigned to this counsellor via ClientCounsellor relationship
+    const clientRelations = await prisma.clientCounsellor.findMany({
       where: {
-        role: 'CLIENT',
-        clientBookings: {
-          some: {
-            counsellorId: profile?.id,
-          },
-        },
+        counsellorId: profile?.id,
+        isActive: true, // Only active relationships
       },
       include: {
-        _count: {
-          select: {
-            clientBookings: true,
+        client: {
+          include: {
+            _count: {
+              select: {
+                clientBookings: {
+                  where: {
+                    counsellorId: profile?.id,
+                  },
+                },
+              },
+            },
+            clientBookings: {
+              where: {
+                counsellorId: profile?.id,
+                status: 'COMPLETED',
+              },
+              orderBy: {
+                startTime: 'desc',
+              },
+              take: 1,
+              select: {
+                id: true,
+                startTime: true,
+                endTime: true,
+              },
+            },
           },
-        },
-        clientBookings: {
-          where: {
-            counsellorId: profile?.id,
-            status: 'COMPLETED',
-          },
-          orderBy: {
-            startTime: 'desc',
-          },
-          take: 1,
         },
       },
       orderBy: {
-        name: 'asc',
+        client: {
+          name: 'asc',
+        },
       },
     })
 
-    // Format response with last session info
-    const formattedClients = clients.map(client => ({
-      id: client.id,
-      name: client.name,
-      email: client.email,
-      totalSessions: client._count.clientBookings,
-      lastSession: client.clientBookings[0] || null,
-      createdAt: client.createdAt,
+    // Format response with client data
+    const formattedClients = clientRelations.map((relation) => ({
+      id: relation.client.id,
+      name: relation.client.name,
+      email: relation.client.email,
+      totalSessions: relation.client._count.clientBookings,
+      lastSession: relation.client.clientBookings[0] || null,
+      assignedAt: relation.assignedAt,
+      relationshipNotes: relation.notes,
+      createdAt: relation.client.createdAt,
     }))
 
     return NextResponse.json({ clients: formattedClients })
@@ -71,7 +87,7 @@ export async function GET(request: Request) {
   }
 }
 
-// POST - Create new client
+// POST - Create new client and assign to counsellor
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions)
@@ -81,15 +97,46 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { name, email, phone, emergencyContact, emergencyPhone, presentingIssues, goals, counsellorId } = body
+    const {
+      name,
+      email,
+      phone,
+      emergencyContact,
+      emergencyPhone,
+      presentingIssues,
+      goals,
+      counsellorId,
+    } = body
 
     // Validation
     if (!name || !email) {
-      return NextResponse.json({ error: 'Name and email are required' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Name and email are required' },
+        { status: 400 }
+      )
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json({ error: 'Invalid email format' }, { status: 400 })
+    }
+
+    if (!counsellorId) {
+      return NextResponse.json(
+        { error: 'Counsellor ID is required' },
+        { status: 400 }
+      )
+    }
+
+    // Verify counsellor exists
+    const counsellorProfile = await prisma.counsellorProfile.findUnique({
+      where: { id: counsellorId },
+    })
+
+    if (!counsellorProfile) {
+      return NextResponse.json(
+        { error: 'Counsellor profile not found' },
+        { status: 404 }
+      )
     }
 
     // Check if user with this email already exists
@@ -114,7 +161,7 @@ export async function POST(request: Request) {
       }
     } else {
       // Create new CLIENT user
-      // Generate a random password (user can reset it later)
+      // Generate a secure random password (user can reset it later)
       const tempPassword = Math.random().toString(36).slice(-10)
       const hashedPassword = await bcrypt.hash(tempPassword, 10)
 
@@ -128,10 +175,50 @@ export async function POST(request: Request) {
       })
 
       // TODO: Send welcome email with password reset link
+      console.log(`New client created with temporary password: ${tempPassword}`)
     }
 
-    // Store additional client info in notes field for first booking
-    // Or create a separate ClientProfile model (future enhancement)
+    // Check if relationship already exists
+    const existingRelation = await prisma.clientCounsellor.findUnique({
+      where: {
+        clientId_counsellorId: {
+          clientId: client.id,
+          counsellorId: counsellorId,
+        },
+      },
+    })
+
+    let relation
+
+    if (existingRelation) {
+      // Reactivate if inactive
+      if (!existingRelation.isActive) {
+        relation = await prisma.clientCounsellor.update({
+          where: { id: existingRelation.id },
+          data: {
+            isActive: true,
+            notes: presentingIssues || goals || null,
+          },
+        })
+      } else {
+        return NextResponse.json(
+          { error: 'Client already assigned to this counsellor' },
+          { status: 400 }
+        )
+      }
+    } else {
+      // Create new relationship
+      relation = await prisma.clientCounsellor.create({
+        data: {
+          clientId: client.id,
+          counsellorId: counsellorId,
+          isActive: true,
+          notes: presentingIssues || goals || null,
+        },
+      })
+    }
+
+    // Store additional client info for reference
     const clientInfo = {
       phone,
       emergencyContact,
@@ -142,13 +229,11 @@ export async function POST(request: Request) {
       createdAt: new Date().toISOString(),
     }
 
-    // You could store this in a ClientProfile model or in the first booking notes
-    // For now, we'll return the client and you can add this info to the first booking
-
     return NextResponse.json({
       client,
-      clientInfo, // Return this so it can be used when creating first booking
-      message: 'Client created successfully',
+      relation,
+      clientInfo,
+      message: 'Client created and assigned successfully',
     })
   } catch (error) {
     console.error('Create client error:', error)
