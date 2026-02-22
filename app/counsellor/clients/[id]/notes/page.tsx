@@ -152,7 +152,7 @@ export default async function ClientNotesPage({ params }: { params: { id: string
               >
                 View Client Sessions
               </Link>
-            </>
+            </div>
           ) : (
             <div className="space-y-8">
               {notesWithSessions.map(({ booking, notes }) => (

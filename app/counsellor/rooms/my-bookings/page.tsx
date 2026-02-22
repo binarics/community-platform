@@ -113,7 +113,7 @@ export default async function MyBookingsPage() {
               <Link href="/counsellor/rooms/book" className="btn btn-primary">
                 Book a Room
               </Link>
-            </>
+            </div>
           ) : (
             <div className="grid md:grid-cols-2 gap-6">
               {upcomingBookings.map((booking) => (

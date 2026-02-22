@@ -98,7 +98,7 @@ export default async function CreateBookingPage({ searchParams }: { searchParams
                 </Link>
               </div>
             </div>
-          </>
+          </div>
         )}
 
         {/* Info Card */}

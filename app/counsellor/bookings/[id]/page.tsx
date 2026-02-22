@@ -138,7 +138,7 @@ export default async function BookingDetailPage({ params }: { params: { id: stri
                   {booking.room && (
                     <div className="text-sm text-slate">
                       Capacity: {booking.room.capacity}
-                    </>
+                    </div>
                   )}
                 </div>
 

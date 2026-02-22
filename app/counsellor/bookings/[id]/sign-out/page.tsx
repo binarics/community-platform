@@ -107,7 +107,7 @@ export default async function SignOutPage({ params }: { params: { id: string } }
                     Concerns Noted
                   </div>
                   <div className="text-slate">{booking.signInConcerns}</div>
-                </>
+                </div>
               )}
             </div>
           </div>

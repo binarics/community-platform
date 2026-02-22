@@ -104,7 +104,7 @@ export default async function CounsellorRoomsPage() {
                   <div className="text-sm text-slate">
                     Client: {booking.client.name}
                   </div>
-                </>
+                </div>
               ))}
             </div>
           </div>

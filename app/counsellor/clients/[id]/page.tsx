@@ -172,7 +172,7 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
                         <div>
                           <span className="font-semibold">Room: </span>
                           {consultationBooking.room.name}
-                        </>
+                        </div>
                       )}
                     </div>
                   </div>
