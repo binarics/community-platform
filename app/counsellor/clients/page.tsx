@@ -173,6 +173,6 @@ export default async function ClientsPage() {
           )}
         </div>
       </div>
-    </div>
+    </>
   )
 }

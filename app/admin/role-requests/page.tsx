@@ -223,6 +223,6 @@ export default async function RoleRequestsPage() {
           </div>
         )}
       </div>
-    </div>
+    </>
   )
 }

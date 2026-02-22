@@ -270,6 +270,6 @@ export default async function SuperAdminDashboard() {
           </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }

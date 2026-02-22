@@ -159,6 +159,6 @@ export default async function AdminMasjidPage() {
           </>
         )}
       </div>
-    </div>
+    </>
   )
 }

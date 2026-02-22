@@ -242,6 +242,6 @@ export default async function AdminBookingsPage({
           </>
         )}
       </div>
-    </div>
+    </>
   )
 }

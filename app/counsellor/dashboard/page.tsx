@@ -440,6 +440,6 @@ export default async function CounsellorDashboardPage() {
           </Link>
         </div>
       </div>
-    </div>
+    </>
   )
 }

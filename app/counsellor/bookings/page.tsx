@@ -260,6 +260,6 @@ export default async function CounsellorBookingsPage({
           </Link>
         </div>
       </div>
-    </div>
+    </>
   )
 }
