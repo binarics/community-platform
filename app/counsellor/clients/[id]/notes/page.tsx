@@ -273,6 +273,6 @@ export default async function ClientNotesPage({ params }: { params: { id: string
           </div>
         )}
       </div>
-    </div>
+    </>
   )
 }

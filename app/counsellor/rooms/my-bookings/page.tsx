@@ -273,6 +273,6 @@ export default async function MyBookingsPage() {
           </div>
         )}
       </div>
-    </div>
+    </>
   )
 }

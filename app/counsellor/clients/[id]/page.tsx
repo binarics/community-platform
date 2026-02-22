@@ -491,6 +491,6 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
           </div>
         )}
       </div>
-    </div>
+    </>
   )
 }
