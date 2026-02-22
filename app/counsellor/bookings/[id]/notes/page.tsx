@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { SessionNotesForm } from '@/components/counsellor/SessionNotesForm'
 import Link from 'next/link'
+import { getActiveCounsellorWhere } from '@/lib/counsellor-auth'
 
 export default async function SessionNotesPage({ params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions)
@@ -17,9 +18,14 @@ export default async function SessionNotesPage({ params }: { params: { id: strin
     where: { userId: session.user.id },
   })
 
-  // If SUPER_ADMIN and no own profile, use first available counsellor profile
-  if (!profile && session.user.role === 'SUPER_ADMIN') {
-    profile = await prisma.counsellorProfile.findFirst()
+  // SUPER_ADMIN: respect the cookie-selected counsellor
+  if (session.user.role === 'SUPER_ADMIN') {
+    const where = await getActiveCounsellorWhere(session.user.id, session.user.role)
+    if (where) {
+      profile = await prisma.counsellorProfile.findFirst({ where })
+    } else if (!profile) {
+      profile = await prisma.counsellorProfile.findFirst()
+    }
   }
 
   if (!profile) {
