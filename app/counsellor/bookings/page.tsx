@@ -167,7 +167,7 @@ export default async function CounsellorBookingsPage({
             <Link href="/counsellor/bookings/new" className="btn btn-primary">
               Schedule a Session
             </Link>
-          </>
+          </div>
         ) : (
           <div className="card overflow-hidden">
             <table className="w-full">
