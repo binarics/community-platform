@@ -2,7 +2,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { Navigation } from '@/components/Navigation'
 import { RoomBookingForm } from '@/components/counsellor/RoomBookingForm'
 import Link from 'next/link'
 
@@ -55,8 +54,7 @@ export default async function BookRoomPage({ searchParams }: { searchParams: { d
   })
 
   return (
-    <div className="min-h-screen bg-cream">
-      <Navigation />
+    <>
 
       <div className="max-w-5xl mx-auto px-8 py-12">
         {/* Header */}
@@ -104,7 +102,7 @@ export default async function BookRoomPage({ searchParams }: { searchParams: { d
             <p className="text-slate mb-6">
               No rooms have been set up yet. Contact your administrator to add rooms.
             </p>
-          </div>
+          </>
         ) : (
           <div className="card p-8">
             <RoomBookingForm

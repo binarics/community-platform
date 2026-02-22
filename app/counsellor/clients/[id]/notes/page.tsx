@@ -2,7 +2,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { Navigation } from '@/components/Navigation'
 import Link from 'next/link'
 import { SessionNoteCard } from '@/components/counsellor/SessionNoteCard'
 
@@ -64,8 +63,7 @@ export default async function ClientNotesPage({ params }: { params: { id: string
   const totalNotes = notesWithSessions.reduce((sum, item) => sum + item.notes.length, 0)
 
   return (
-    <div className="min-h-screen bg-cream">
-      <Navigation />
+    <>
 
       <div className="max-w-7xl mx-auto px-8 py-12">
         {/* Header */}
@@ -154,7 +152,7 @@ export default async function ClientNotesPage({ params }: { params: { id: string
               >
                 View Client Sessions
               </Link>
-            </div>
+            </>
           ) : (
             <div className="space-y-8">
               {notesWithSessions.map(({ booking, notes }) => (

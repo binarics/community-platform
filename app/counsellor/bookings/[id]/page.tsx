@@ -2,7 +2,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { Navigation } from '@/components/Navigation'
 import Link from 'next/link'
 import { PaymentUpdatePanel } from '@/components/counsellor/PaymentUpdatePanel'
 
@@ -50,8 +49,7 @@ export default async function BookingDetailPage({ params }: { params: { id: stri
   const isFuture = new Date(booking.startTime) > new Date()
 
   return (
-    <div className="min-h-screen bg-cream">
-      <Navigation />
+    <>
 
       <div className="max-w-7xl mx-auto px-8 py-12">
         {/* Header */}
@@ -140,7 +138,7 @@ export default async function BookingDetailPage({ params }: { params: { id: stri
                   {booking.room && (
                     <div className="text-sm text-slate">
                       Capacity: {booking.room.capacity}
-                    </div>
+                    </>
                   )}
                 </div>
 

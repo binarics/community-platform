@@ -2,7 +2,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { Navigation } from '@/components/Navigation'
 import { SignOutForm } from '@/components/counsellor/SignOutForm'
 import Link from 'next/link'
 
@@ -47,8 +46,7 @@ export default async function SignOutPage({ params }: { params: { id: string } }
   }
 
   return (
-    <div className="min-h-screen bg-cream">
-      <Navigation />
+    <>
 
       <div className="max-w-4xl mx-auto px-8 py-12">
         {/* Header */}
@@ -109,7 +107,7 @@ export default async function SignOutPage({ params }: { params: { id: string } }
                     Concerns Noted
                   </div>
                   <div className="text-slate">{booking.signInConcerns}</div>
-                </div>
+                </>
               )}
             </div>
           </div>

@@ -2,7 +2,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { Navigation } from '@/components/Navigation'
 import { CounsellorSetupForm } from '@/components/counsellor/CounsellorSetupForm'
 
 export default async function CounsellorSetupPage() {
@@ -36,8 +35,7 @@ export default async function CounsellorSetupPage() {
   })
 
   return (
-    <div className="min-h-screen bg-cream">
-      <Navigation />
+    <>
 
       <div className="max-w-4xl mx-auto px-8 py-12">
         {/* Header */}
@@ -142,6 +140,6 @@ export default async function CounsellorSetupPage() {
           </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }

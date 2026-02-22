@@ -2,7 +2,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { Navigation } from '@/components/Navigation'
 import { MasjidDetails } from '@/components/masjid/MasjidDetails'
 import { MasjidEvents } from '@/components/masjid/MasjidEvents'
 import { MasjidMembers } from '@/components/masjid/MasjidMembers'
@@ -98,8 +97,7 @@ export default async function MasjidDetailPage({ params }: { params: { id: strin
   }
 
   return (
-    <div className="min-h-screen bg-cream">
-      <Navigation />
+    <>
 
       <div className="max-w-7xl mx-auto px-8 py-12">
         {/* Header */}
@@ -132,7 +130,7 @@ export default async function MasjidDetailPage({ params }: { params: { id: strin
                 <Link href={`/admin/masjid/${masjid.id}/events/new`} className="btn btn-primary">
                   + New Event
                 </Link>
-              </div>
+              </>
             )}
           </div>
         </div>

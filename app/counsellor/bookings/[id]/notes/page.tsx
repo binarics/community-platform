@@ -2,7 +2,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { Navigation } from '@/components/Navigation'
 import { SessionNotesForm } from '@/components/counsellor/SessionNotesForm'
 import Link from 'next/link'
 
@@ -56,8 +55,7 @@ export default async function SessionNotesPage({ params }: { params: { id: strin
   }
 
   return (
-    <div className="min-h-screen bg-cream">
-      <Navigation />
+    <>
 
       <div className="max-w-7xl mx-auto px-8 py-12">
         {/* Header */}
@@ -179,7 +177,7 @@ export default async function SessionNotesPage({ params }: { params: { id: strin
                           <p className="text-slate text-sm whitespace-pre-wrap">{note.plan}</p>
                         </div>
                       </div>
-                    </div>
+                    </>
                   ))}
                 </div>
               </div>

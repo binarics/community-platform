@@ -2,7 +2,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { Navigation } from '@/components/Navigation'
 import Link from 'next/link'
 
 export default async function CounsellorRoomsPage() {
@@ -53,8 +52,7 @@ export default async function CounsellorRoomsPage() {
   })
 
   return (
-    <div className="min-h-screen bg-cream">
-      <Navigation />
+    <>
 
       <div className="max-w-6xl mx-auto px-8 py-12">
         {/* Header */}
@@ -106,7 +104,7 @@ export default async function CounsellorRoomsPage() {
                   <div className="text-sm text-slate">
                     Client: {booking.client.name}
                   </div>
-                </div>
+                </>
               ))}
             </div>
           </div>

@@ -19,27 +19,6 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen">
       <Navigation />
-      {/* <nav className="sticky top-0 bg-cream/95 backdrop-blur border-b border-sage-100 z-50">
-        <div className="max-w-6xl mx-auto px-8 py-5 flex justify-between items-center">
-          <Link href="/" className="font-display text-2xl font-bold text-sage-500">
-            Community Platform
-          </Link>
-          <div className="flex gap-6 items-center">
-            <Link href="/discover" className="text-slate hover:text-sage-500 font-medium">
-              Discover Events
-            </Link>
-            <Link href="/courses" className="text-slate hover:text-sage-500 font-medium">
-              Courses
-            </Link>
-            <Link href="/counselling" className="text-slate hover:text-sage-500 font-medium">
-              Counselling
-            </Link>
-            <Link href="/dashboard" className="btn btn-outline btn-sm">
-              Dashboard
-            </Link>
-          </div>
-        </div>
-      </nav> */}
 
       {/* Hero */}
       <section className="min-h-[600px] flex items-center bg-gradient-to-br from-sage-50 to-clay-100 relative overflow-hidden">
