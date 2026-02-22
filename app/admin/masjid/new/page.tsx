@@ -1,7 +1,6 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { Navigation } from '@/components/Navigation'
 import { MasjidForm } from '@/components/masjid/MasjidForm'
 import Link from 'next/link'
 
@@ -13,8 +12,7 @@ export default async function NewMasjidPage() {
   }
 
   return (
-    <div className="min-h-screen bg-cream">
-      <Navigation />
+    <>
 
       <div className="max-w-4xl mx-auto px-8 py-12">
         {/* Header */}
@@ -57,6 +55,6 @@ export default async function NewMasjidPage() {
           <MasjidForm />
         </div>
       </div>
-    </div>
+    </>
   )
 }

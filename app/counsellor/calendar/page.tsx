@@ -2,7 +2,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { Navigation } from '@/components/Navigation'
 import { FullCalendar } from '@/components/counsellor/FullCalendar'
 import Link from 'next/link'
 
@@ -87,8 +86,7 @@ export default async function CalendarPage({ searchParams }: {
   const availability = profile?.availability ? JSON.parse(profile.availability) : null
 
   return (
-    <div className="min-h-screen bg-cream">
-      <Navigation />
+    <>
 
       <div className="max-w-[1600px] mx-auto px-8 py-12">
         {/* Header */}
@@ -220,6 +218,6 @@ export default async function CalendarPage({ searchParams }: {
           </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }

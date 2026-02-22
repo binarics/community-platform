@@ -2,7 +2,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { Navigation } from '@/components/Navigation'
 import Link from 'next/link'
 
 export default async function CounsellorDashboardPage() {
@@ -37,8 +36,7 @@ export default async function CounsellorDashboardPage() {
     // Redirect to setup if no profile exists
     if (session.user.role === 'SUPER_ADMIN') {
       return (
-        <div className="min-h-screen bg-cream">
-          <Navigation />
+        <>
           <div className="max-w-7xl mx-auto px-8 py-12">
             <div className="card p-12 text-center">
               <div className="text-6xl mb-4">🧠</div>
@@ -53,7 +51,7 @@ export default async function CounsellorDashboardPage() {
               </Link>
             </div>
           </div>
-        </div>
+        </>
       )
     }
     redirect('/counsellor/setup')
@@ -154,8 +152,7 @@ export default async function CounsellorDashboardPage() {
   })
 
   return (
-    <div className="min-h-screen bg-cream">
-      <Navigation />
+    <>
 
       <div className="max-w-7xl mx-auto px-8 py-12">
         {/* Header */}

@@ -2,7 +2,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { Navigation } from '@/components/Navigation'
 import Link from 'next/link'
 
 export default async function ClientProfilePage({ params }: { params: { id: string } }) {
@@ -85,8 +84,7 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
     consultationStatus === 'COMPLETED' || consultationStatus === 'BYPASSED'
 
   return (
-    <div className="min-h-screen bg-cream">
-      <Navigation />
+    <>
 
       <div className="max-w-7xl mx-auto px-8 py-12">
         {/* Header */}
@@ -174,7 +172,7 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
                         <div>
                           <span className="font-semibold">Room: </span>
                           {consultationBooking.room.name}
-                        </div>
+                        </>
                       )}
                     </div>
                   </div>

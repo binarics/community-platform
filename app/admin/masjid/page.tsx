@@ -2,7 +2,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { Navigation } from '@/components/Navigation'
 import Link from 'next/link'
 
 export default async function AdminMasjidPage() {
@@ -28,8 +27,7 @@ export default async function AdminMasjidPage() {
   })
 
   return (
-    <div className="min-h-screen bg-cream">
-      <Navigation />
+    <>
 
       <div className="max-w-6xl mx-auto px-8 py-12">
         {/* Header */}
@@ -158,7 +156,7 @@ export default async function AdminMasjidPage() {
             <Link href="/admin/masjid/new" className="btn btn-primary inline-flex">
               Create First Masjid
             </Link>
-          </div>
+          </>
         )}
       </div>
     </div>

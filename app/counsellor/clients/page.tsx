@@ -2,7 +2,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { Navigation } from '@/components/Navigation'
 import Link from 'next/link'
 import { ClientCard } from '@/components/counsellor/ClientCard'
 
@@ -82,8 +81,7 @@ export default async function ClientsPage() {
   ).length
 
   return (
-    <div className="min-h-screen bg-cream">
-      <Navigation />
+    <>
 
       <div className="max-w-7xl mx-auto px-8 py-12">
         {/* Header */}
@@ -114,7 +112,7 @@ export default async function ClientsPage() {
                 initial consultation session.
               </p>
             </div>
-          </div>
+          </>
         )}
 
         {/* Stats Cards */}

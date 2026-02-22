@@ -2,7 +2,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { Navigation } from '@/components/Navigation'
 import Link from 'next/link'
 import { RoleRequestReviewButtons } from '@/components/roles/RoleRequestReviewButtons'
 
@@ -38,8 +37,7 @@ export default async function RoleRequestsPage() {
   })
 
   return (
-    <div className="min-h-screen bg-cream">
-      <Navigation />
+    <>
 
       <div className="max-w-7xl mx-auto px-8 py-12">
         <div className="mb-12">
@@ -69,7 +67,7 @@ export default async function RoleRequestsPage() {
               <p className="text-slate">
                 No pending role requests at the moment.
               </p>
-            </div>
+            </>
           ) : (
             <div className="space-y-6">
               {requests.map((request) => (

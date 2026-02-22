@@ -2,7 +2,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { Navigation } from '@/components/Navigation'
 import Link from 'next/link'
 
 export default async function AdminEventsPage({ searchParams }: {
@@ -69,8 +68,7 @@ export default async function AdminEventsPage({ searchParams }: {
   }
 
   return (
-    <div className="min-h-screen bg-cream">
-      <Navigation />
+    <>
 
       <div className="max-w-7xl mx-auto px-8 py-12">
         {/* Header */}
@@ -172,7 +170,7 @@ export default async function AdminEventsPage({ searchParams }: {
                 No Events Found
               </h3>
               <p className="text-slate">Try adjusting your filters</p>
-            </div>
+            </>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">

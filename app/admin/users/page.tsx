@@ -2,7 +2,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { Navigation } from '@/components/Navigation'
 import Link from 'next/link'
 import { UserRoleChanger } from '@/components/admin/UserRoleChanger'
 import { UserDeleteButton } from '@/components/admin/UserDeleteButton'
@@ -48,8 +47,7 @@ export default async function UsersManagement({ searchParams }: { searchParams: 
   })
 
   return (
-    <div className="min-h-screen bg-cream">
-      <Navigation />
+    <>
 
       <div className="max-w-7xl mx-auto px-8 py-12">
         <div className="mb-12">
@@ -148,7 +146,7 @@ export default async function UsersManagement({ searchParams }: { searchParams: 
                       {user._count.organisedEvents > 0 && (
                         <div className="text-slate">
                           📅 {user._count.organisedEvents} events
-                        </div>
+                        </>
                       )}
                       {user._count.rsvps > 0 && (
                         <div className="text-slate">

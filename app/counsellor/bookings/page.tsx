@@ -2,7 +2,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { Navigation } from '@/components/Navigation'
 import Link from 'next/link'
 
 const STATUS_STYLES: Record<string, string> = {
@@ -76,8 +75,7 @@ export default async function CounsellorBookingsPage({
   }
 
   return (
-    <div className="min-h-screen bg-cream">
-      <Navigation />
+    <>
 
       <div className="max-w-7xl mx-auto px-8 py-12">
         {/* Header */}
@@ -169,7 +167,7 @@ export default async function CounsellorBookingsPage({
             <Link href="/counsellor/bookings/new" className="btn btn-primary">
               Schedule a Session
             </Link>
-          </div>
+          </>
         ) : (
           <div className="card overflow-hidden">
             <table className="w-full">
