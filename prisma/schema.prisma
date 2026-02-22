@@ -234,9 +234,14 @@ model Booking {
   startTime     DateTime
   endTime       DateTime
   status        String   @default("SCHEDULED") // SCHEDULED, COMPLETED, CANCELLED, NO_SHOW
-  sessionType   String?  @default("INDIVIDUAL") // INDIVIDUAL, COUPLES, GROUP, ASSESSMENT
+  sessionType   String?  @default("INDIVIDUAL") // INDIVIDUAL, COUPLES, FAMILY, GROUP, ASSESSMENT, CONSULTATION
   paymentStatus String   @default("UNPAID") // UNPAID, PARTIAL, PAID
   notes         String?
+
+  // CONSULTATION FIELDS
+  isConsultation    Boolean @default(false)
+  safeguardingRisk  String? // NONE, LOW, MEDIUM, HIGH
+  safeguardingNotes String?
 
   // ADD THESE NEW FIELDS:
   signedIn       Boolean   @default(false)
@@ -467,9 +472,14 @@ model ClientCounsellor {
   
   assignedAt DateTime @default(now())
   notes      String?
-  isActive   Boolean  @default(true)  // Make sure this line is there!
+  isActive   Boolean  @default(true)
 
-  
+  // CONSULTATION TRACKING
+  consultationStatus       String    @default("PENDING") // PENDING, SCHEDULED, COMPLETED, BYPASSED
+  consultationBookingId    String?   // ID of the consultation Booking record
+  consultationBypassReason String?   // Reason if bypassed (retrospective)
+  consultationCompletedAt  DateTime?
+
   @@unique([clientId, counsellorId])
   @@index([clientId])
   @@index([counsellorId])

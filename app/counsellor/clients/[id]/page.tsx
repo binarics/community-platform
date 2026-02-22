@@ -26,40 +26,52 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
   }
 
   // Get client with all related data
-  const client = await prisma.user.findUnique({
-    where: { id: params.id },
-    include: {
-      clientBookings: {
-        where: {
-          counsellorId: profile?.id,
-        },
-        include: {
-          room: true,
-          sessionNotes: {
-            orderBy: { createdAt: 'desc' },
+  const [client, clientRelation] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: params.id },
+      include: {
+        clientBookings: {
+          where: {
+            counsellorId: profile?.id,
+          },
+          include: {
+            room: true,
+            sessionNotes: {
+              orderBy: { createdAt: 'desc' },
+            },
+          },
+          orderBy: {
+            startTime: 'desc',
           },
         },
-        orderBy: {
-          startTime: 'desc',
-        },
       },
-    },
-  })
+    }),
+    prisma.clientCounsellor.findFirst({
+      where: {
+        clientId: params.id,
+        counsellorId: profile?.id,
+      },
+    }),
+  ])
 
   if (!client) {
     notFound()
   }
 
-  // Calculate statistics
-  const totalSessions = client.clientBookings.length
-  const completedSessions = client.clientBookings.filter((b) => b.status === 'COMPLETED').length
-  const upcomingSessions = client.clientBookings.filter(
+  // Separate consultation booking from regular sessions
+  const consultationBooking = client.clientBookings.find((b) => b.isConsultation)
+  const regularSessions = client.clientBookings.filter((b) => !b.isConsultation)
+
+  // Calculate statistics (excluding consultation)
+  const totalSessions = regularSessions.length
+  const completedSessions = regularSessions.filter((b) => b.status === 'COMPLETED').length
+  const upcomingSessions = regularSessions.filter(
     (b) => b.status === 'SCHEDULED' && new Date(b.startTime) > new Date()
   ).length
-  const totalNotes = client.clientBookings.reduce((sum, b) => sum + b.sessionNotes.length, 0)
+  const totalNotes = regularSessions.reduce((sum, b) => sum + b.sessionNotes.length, 0)
 
   // Average session feedback
-  const sessionsWithFeedback = client.clientBookings.filter((b) => b.signOutRating !== null)
+  const sessionsWithFeedback = regularSessions.filter((b) => b.signOutRating !== null)
   const avgRating =
     sessionsWithFeedback.length > 0
       ? (
@@ -67,6 +79,10 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
           sessionsWithFeedback.length
         ).toFixed(1)
       : null
+
+  const consultationStatus = clientRelation?.consultationStatus ?? 'PENDING'
+  const consultationComplete =
+    consultationStatus === 'COMPLETED' || consultationStatus === 'BYPASSED'
 
   return (
     <div className="min-h-screen bg-cream">
@@ -99,6 +115,119 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
           </div>
         </div>
 
+        {/* ── Consultation Status Panel ─────────────────────────────────── */}
+        <div className={`card p-6 mb-8 border-2 ${
+          consultationStatus === 'PENDING'
+            ? 'border-amber-300 bg-amber-50'
+            : consultationStatus === 'SCHEDULED'
+            ? 'border-violet-300 bg-violet-50'
+            : 'border-green-200 bg-green-50'
+        }`}>
+          <div className="flex items-start justify-between">
+            <div className="flex items-start gap-4">
+              <div className="text-3xl">
+                {consultationStatus === 'PENDING' && '⚠️'}
+                {consultationStatus === 'SCHEDULED' && '📋'}
+                {consultationStatus === 'COMPLETED' && '✅'}
+                {consultationStatus === 'BYPASSED' && '↩️'}
+              </div>
+              <div>
+                <div className="font-display text-xl font-bold text-charcoal mb-1">
+                  Initial Consultation
+                </div>
+
+                {consultationStatus === 'PENDING' && (
+                  <p className="text-sm text-amber-700">
+                    No consultation has been booked yet. A consultation session must take place
+                    before any counselling sessions begin.
+                  </p>
+                )}
+
+                {consultationStatus === 'SCHEDULED' && consultationBooking && (
+                  <div>
+                    <p className="text-sm text-violet-700 mb-2">
+                      Consultation scheduled — awaiting completion.
+                    </p>
+                    <div className="text-sm text-charcoal space-y-1">
+                      <div>
+                        <span className="font-semibold">Date: </span>
+                        {new Date(consultationBooking.startTime).toLocaleDateString('en-GB', {
+                          weekday: 'long',
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                        })}
+                      </div>
+                      <div>
+                        <span className="font-semibold">Time: </span>
+                        {new Date(consultationBooking.startTime).toLocaleTimeString('en-GB', {
+                          hour: 'numeric',
+                          minute: '2-digit',
+                        })}
+                        {' – '}
+                        {new Date(consultationBooking.endTime).toLocaleTimeString('en-GB', {
+                          hour: 'numeric',
+                          minute: '2-digit',
+                        })}
+                      </div>
+                      {consultationBooking.room && (
+                        <div>
+                          <span className="font-semibold">Room: </span>
+                          {consultationBooking.room.name}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {consultationStatus === 'COMPLETED' && (
+                  <p className="text-sm text-green-700">
+                    Consultation completed
+                    {clientRelation?.consultationCompletedAt &&
+                      ` on ${new Date(clientRelation.consultationCompletedAt).toLocaleDateString('en-GB', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                      })}`}
+                    . Client is ready for regular counselling sessions.
+                  </p>
+                )}
+
+                {consultationStatus === 'BYPASSED' && (
+                  <div>
+                    <p className="text-sm text-slate mb-1">
+                      Consultation marked as completed retrospectively.
+                    </p>
+                    {clientRelation?.consultationBypassReason && (
+                      <p className="text-xs text-slate italic">
+                        Note: {clientRelation.consultationBypassReason}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Action button */}
+            {consultationStatus === 'PENDING' && (
+              <Link
+                href={`/counsellor/bookings/new?clientId=${client.id}&type=CONSULTATION`}
+                className="btn btn-primary text-sm whitespace-nowrap"
+              >
+                Book Consultation
+              </Link>
+            )}
+            {consultationStatus === 'SCHEDULED' && consultationBooking && (
+              <Link
+                href={`/counsellor/bookings/${consultationBooking.id}`}
+                className="btn btn-outline text-sm whitespace-nowrap"
+              >
+                View Booking →
+              </Link>
+            )}
+          </div>
+        </div>
+
         {/* Stats Grid */}
         <div className="grid md:grid-cols-4 gap-6 mb-8">
           <div className="card p-6">
@@ -128,17 +257,23 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
             <div className="text-sm text-slate">{totalSessions} total sessions</div>
           </div>
 
-          {client.clientBookings.length === 0 ? (
+          {regularSessions.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-5xl mb-3">📅</div>
-              <p className="text-slate mb-4">No sessions yet</p>
-              <Link href={`/counsellor/bookings/new?clientId=${client.id}`} className="btn btn-primary">
-                Schedule First Session
-              </Link>
+              <p className="text-slate mb-4">
+                {consultationComplete
+                  ? 'No counselling sessions yet'
+                  : 'Complete the consultation before booking counselling sessions'}
+              </p>
+              {consultationComplete && (
+                <Link href={`/counsellor/bookings/new?clientId=${client.id}`} className="btn btn-primary">
+                  Schedule First Session
+                </Link>
+              )}
             </div>
           ) : (
             <div className="space-y-6">
-              {client.clientBookings.map((booking) => {
+              {regularSessions.map((booking) => {
                 const startDate = new Date(booking.startTime)
                 const isPast = startDate < new Date()
                 const isFuture = !isPast
@@ -257,11 +392,6 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
                                   {'⭐'.repeat(booking.signOutRating)}
                                 </div>
                               </div>
-                              {booking.signOutMostHelpful && (
-                                <div className="text-xs text-slate mt-1">
-                                  Most helpful: {booking.signOutMostHelpful}
-                                </div>
-                              )}
                             </div>
                           )}
                         </div>
@@ -351,8 +481,8 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
               <div>
                 <div className="text-xs font-semibold uppercase text-slate mb-1">Last Session</div>
                 <div className="text-charcoal">
-                  {client.clientBookings[0] &&
-                    new Date(client.clientBookings[0].startTime).toLocaleDateString('en-GB', {
+                  {regularSessions[0] &&
+                    new Date(regularSessions[0].startTime).toLocaleDateString('en-GB', {
                       day: 'numeric',
                       month: 'short',
                       year: 'numeric',
