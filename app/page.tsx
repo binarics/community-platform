@@ -107,7 +107,7 @@ export default async function HomePage() {
                   </div>
                   <div className="p-6">
                     <div className="flex gap-2 mb-3">
-                      {event.organisation.verified && (
+                      {event.organisation?.verified && (
                         <span className="badge bg-sage-100 text-sage-700">✓ Verified</span>
                       )}
                       <span className="badge bg-clay-100 text-clay-600">{event.entryType}</span>
