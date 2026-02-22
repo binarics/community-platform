@@ -234,9 +234,12 @@ model Booking {
   startTime     DateTime
   endTime       DateTime
   status        String   @default("SCHEDULED") // SCHEDULED, COMPLETED, CANCELLED, NO_SHOW
+  paymentStatus     String  @default("UNPAID") // UNPAID, PARTIAL, PAID
+  paymentAmount     Float?  // Actual amount paid (£)
+  referralFeePaid   Boolean @default(false) // Whether £10 referral fee has been sent to Eclectic House
+  referralFeeAmount Float?  // Referral fee amount (£10 for consultations)
+  notes             String?
   sessionType   String?  @default("INDIVIDUAL") // INDIVIDUAL, COUPLES, FAMILY, GROUP, ASSESSMENT, CONSULTATION
-  paymentStatus String   @default("UNPAID") // UNPAID, PARTIAL, PAID
-  notes         String?
 
   // CONSULTATION FIELDS
   isConsultation    Boolean @default(false)
