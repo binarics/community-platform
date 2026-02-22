@@ -57,43 +57,6 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid md:grid-cols-4 gap-6 mb-12">
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Active Events</div>
-            <div className="font-display text-4xl font-bold text-charcoal mb-1">
-              {approvedEvents.length}
-            </div>
-            <div className="text-sm text-sage-500">
-              {events.length} total events
-            </div>
-          </div>
-
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Total RSVPs</div>
-            <div className="font-display text-4xl font-bold text-charcoal mb-1">
-              {totalRSVPs}
-            </div>
-            <div className="text-sm text-sage-500">Across all events</div>
-          </div>
-
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Pending Review</div>
-            <div className="font-display text-4xl font-bold text-charcoal mb-1">
-              {pendingEvents.length}
-            </div>
-            <div className="text-sm text-slate">Awaiting approval</div>
-          </div>
-
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Your Role</div>
-            <div className="font-display text-xl font-bold text-charcoal mb-1 capitalize">
-              {session.user.role.replace('_', ' ')}
-            </div>
-            <div className="text-sm text-slate">Account type</div>
-          </div>
-        </div>
-
         {/* Quick Actions */}
         <div className="grid md:grid-cols-4 gap-4 mb-12">
           <Link href="/admin/masjid" className="card p-6 text-center hover:-translate-y-1 transition">

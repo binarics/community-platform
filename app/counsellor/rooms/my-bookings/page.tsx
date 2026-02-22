@@ -71,36 +71,6 @@ export default async function MyBookingsPage() {
           </p>
         </div>
 
-        {/* Stats */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">
-              Upcoming Bookings
-            </div>
-            <div className="font-display text-4xl font-bold text-charcoal">
-              {upcomingBookings.length}
-            </div>
-          </div>
-
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">
-              Past Bookings
-            </div>
-            <div className="font-display text-4xl font-bold text-charcoal">
-              {pastBookings.length}
-            </div>
-          </div>
-
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">
-              Total Bookings
-            </div>
-            <div className="font-display text-4xl font-bold text-charcoal">
-              {bookings.length}
-            </div>
-          </div>
-        </div>
-
         {/* Upcoming Bookings */}
         <div className="mb-12">
           <h2 className="font-display text-3xl font-bold text-charcoal mb-6">

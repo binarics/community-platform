@@ -121,34 +121,6 @@ export default async function ClientsPage() {
           </div>
         )}
 
-        {/* Stats Cards */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Total Clients</div>
-            <div className="font-display text-4xl font-bold text-charcoal">{clients.length}</div>
-          </div>
-
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Active Clients</div>
-            <div className="font-display text-4xl font-bold text-green-600">{activeClients}</div>
-            <div className="text-sm text-slate">with upcoming sessions</div>
-          </div>
-
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Total Sessions</div>
-            <div className="font-display text-4xl font-bold text-sage-600">{totalSessions}</div>
-            <div className="text-sm text-slate">all time</div>
-          </div>
-
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Consultations Due</div>
-            <div className={`font-display text-4xl font-bold ${pendingConsultations > 0 ? 'text-amber-600' : 'text-charcoal'}`}>
-              {pendingConsultations}
-            </div>
-            <div className="text-sm text-slate">pending or scheduled</div>
-          </div>
-        </div>
-
         {/* Client List */}
         <div className="card p-8">
           <h2 className="font-display text-2xl font-bold text-charcoal mb-6">All Clients</h2>

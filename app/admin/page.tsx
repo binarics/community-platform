@@ -61,33 +61,6 @@ export default async function SuperAdminDashboard() {
           </p>
         </div>
 
-        {/* System Stats */}
-        <div className="grid md:grid-cols-4 gap-6 mb-12">
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Total Users</div>
-            <div className="font-display text-4xl font-bold text-charcoal mb-1">{totalUsers}</div>
-            <div className="text-sm text-sage-500">Registered accounts</div>
-          </div>
-
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Total Events</div>
-            <div className="font-display text-4xl font-bold text-charcoal mb-1">{totalEvents}</div>
-            <div className="text-sm text-amber-600">{pendingEvents} pending review</div>
-          </div>
-
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Masjids</div>
-            <div className="font-display text-4xl font-bold text-charcoal mb-1">{totalMasjids}</div>
-            <div className="text-sm text-sage-500">Registered masjids</div>
-          </div>
-
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Total Bookings</div>
-            <div className="font-display text-4xl font-bold text-charcoal mb-1">{totalBookings}</div>
-            <div className="text-sm text-sage-500">Counselling sessions</div>
-          </div>
-        </div>
-
         {/* Admin Control Panels */}
         <div className="grid md:grid-cols-3 gap-6 mb-12">
           <Link href="/admin/users" className="card p-8 hover:-translate-y-1 transition">
