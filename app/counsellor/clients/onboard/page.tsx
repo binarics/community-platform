@@ -22,6 +22,12 @@ export default async function OnboardClientPage() {
     redirect('/counsellor/setup')
   }
 
+  // Fetch rooms so counsellor can optionally book one for the consultation
+  const rooms = await prisma.room.findMany({
+    orderBy: { name: 'asc' },
+    select: { id: true, name: true, capacity: true },
+  })
+
   return (
     <div className="min-h-screen bg-cream">
       <Navigation />
@@ -29,8 +35,8 @@ export default async function OnboardClientPage() {
       <div className="max-w-4xl mx-auto px-8 py-12">
         {/* Header */}
         <div className="mb-8">
-          <Link 
-            href="/counsellor/clients" 
+          <Link
+            href="/counsellor/clients"
             className="text-sage-500 hover:text-sage-600 font-semibold text-sm mb-4 inline-block"
           >
             ← Back to Clients
@@ -39,7 +45,7 @@ export default async function OnboardClientPage() {
             Onboard New Client
           </h1>
           <p className="text-xl text-slate">
-            Add a new client to your practice
+            Add a new client and book their initial consultation
           </p>
         </div>
 
@@ -49,13 +55,14 @@ export default async function OnboardClientPage() {
             <div className="text-2xl">💡</div>
             <div>
               <div className="font-semibold text-charcoal mb-2">
-                Client Onboarding
+                Onboarding Process
               </div>
               <ul className="text-sm text-slate space-y-1">
-                <li>• Create a new client account or link an existing user</li>
-                <li>• Client will be assigned to you automatically</li>
-                <li>• You can book their first session immediately after</li>
-                <li>• Client data is private and only visible to you</li>
+                <li>• Step 1: Create or link the client account</li>
+                <li>• Step 2: Book the mandatory consultation session</li>
+                <li>• Consultation covers the client&apos;s situation, therapy process & safeguarding</li>
+                <li>• Regular counselling sessions can only be booked after consultation</li>
+                <li>• Use the bypass option only when adding clients retrospectively</li>
               </ul>
             </div>
           </div>
@@ -63,7 +70,7 @@ export default async function OnboardClientPage() {
 
         {/* Form */}
         <div className="card p-8">
-          <ClientOnboardingForm counsellorId={profile.id} />
+          <ClientOnboardingForm counsellorId={profile.id} rooms={rooms} />
         </div>
       </div>
     </div>

@@ -180,7 +180,14 @@ export default async function MyBookingsPage() {
                     </div>
                     <div>
                       <div className="font-semibold text-charcoal">{booking.client.name}</div>
-                      <div className="text-xs text-slate">{booking.sessionType}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="text-xs text-slate">{booking.isConsultation ? 'Consultation' : booking.sessionType}</div>
+                        {booking.isConsultation && (
+                          <span className="px-1.5 py-0.5 bg-violet-100 text-violet-700 rounded text-xs font-semibold">
+                            📋 Consultation
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </Link>
@@ -239,7 +246,12 @@ export default async function MyBookingsPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="font-semibold text-charcoal">{booking.client.name}</div>
-                        <div className="text-sm text-slate">{booking.sessionType}</div>
+                        <div className="flex items-center gap-2">
+                          <div className="text-sm text-slate">{booking.isConsultation ? 'Consultation' : booking.sessionType}</div>
+                          {booking.isConsultation && (
+                            <span className="px-1.5 py-0.5 bg-violet-100 text-violet-700 rounded text-xs font-semibold">📋</span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         <span className={`badge ${

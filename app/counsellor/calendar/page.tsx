@@ -187,7 +187,11 @@ export default async function CalendarPage({ searchParams }: {
         {/* Legend */}
         <div className="mt-6 p-6 bg-sage-50 rounded-2xl border border-sage-100">
           <div className="flex items-center gap-6 flex-wrap">
-            <div className="text-sm font-semibold text-charcoal">Status Legend:</div>
+            <div className="text-sm font-semibold text-charcoal">Legend:</div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-violet-500"></div>
+              <span className="text-sm text-slate">Consultation</span>
+            </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded bg-sage-500"></div>
               <span className="text-sm text-slate">Scheduled</span>

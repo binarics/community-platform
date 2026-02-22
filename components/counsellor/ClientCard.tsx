@@ -14,9 +14,40 @@ interface ClientCardProps {
       startTime: Date | string
     }>
   }
+  consultationStatus?: string
 }
 
-export function ClientCard({ client }: ClientCardProps) {
+function ConsultationBadge({ status }: { status?: string }) {
+  if (!status || status === 'COMPLETED') return null
+
+  const config: Record<string, { label: string; className: string }> = {
+    PENDING: {
+      label: 'Consultation Pending',
+      className: 'bg-amber-100 text-amber-700 border-amber-200',
+    },
+    SCHEDULED: {
+      label: 'Consultation Booked',
+      className: 'bg-violet-100 text-violet-700 border-violet-200',
+    },
+    BYPASSED: {
+      label: 'Retrospective',
+      className: 'bg-slate-100 text-slate-600 border-slate-200',
+    },
+  }
+
+  const { label, className } = config[status] || config['PENDING']
+
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${className}`}>
+      {status === 'PENDING' && '⚠️'}
+      {status === 'SCHEDULED' && '📋'}
+      {status === 'BYPASSED' && '↩️'}
+      {label}
+    </span>
+  )
+}
+
+export function ClientCard({ client, consultationStatus }: ClientCardProps) {
   const router = useRouter()
 
   const totalSessions = client.clientBookings.length
@@ -38,7 +69,7 @@ export function ClientCard({ client }: ClientCardProps) {
       className="card p-6 hover:-translate-y-1 hover:shadow-xl transition group block"
     >
       {/* Client Avatar & Name */}
-      <div className="flex items-center gap-4 mb-4">
+      <div className="flex items-center gap-4 mb-3">
         <div className="w-16 h-16 rounded-full bg-gradient-to-br from-terracotta-100 to-terracotta-200 flex items-center justify-center font-display text-2xl font-bold text-terracotta-600 flex-shrink-0">
           {client.name?.charAt(0).toUpperCase() || '?'}
         </div>
@@ -49,6 +80,13 @@ export function ClientCard({ client }: ClientCardProps) {
           <div className="text-sm text-slate truncate">{client.email}</div>
         </div>
       </div>
+
+      {/* Consultation Status Badge */}
+      {consultationStatus && consultationStatus !== 'COMPLETED' && (
+        <div className="mb-3">
+          <ConsultationBadge status={consultationStatus} />
+        </div>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-3 gap-4 mb-4 pb-4 border-b border-sage-100">
