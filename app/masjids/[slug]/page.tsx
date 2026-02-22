@@ -13,7 +13,7 @@ export default async function MasjidDetailPage({ params }: { params: { slug: str
     include: {
       events: {
         where: {
-          status: 'APPROVED',
+          status: 'PUBLISHED',
           startDate: { gte: new Date() },
         },
         orderBy: {
