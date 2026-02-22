@@ -27,33 +27,45 @@ export default async function ClientsPage() {
     redirect('/counsellor/setup')
   }
 
-  // Get ONLY clients assigned to this counsellor
-  const clientRelations = await prisma.clientCounsellor.findMany({
-    where: {
-      counsellorId: profile.id,
-      isActive: true,
-    },
+  // Collect client IDs from both explicit assignments AND bookings so both
+  // lists stay in sync — a client booked directly (without going through
+  // "onboard client") will now appear here too.
+  const [clientRelations, bookingRows] = await Promise.all([
+    prisma.clientCounsellor.findMany({
+      where: { counsellorId: profile.id, isActive: true },
+      select: {
+        clientId: true,
+        consultationStatus: true,
+      },
+    }),
+    prisma.booking.findMany({
+      where: { counsellorId: profile.id },
+      select: { clientId: true },
+      distinct: ['clientId'],
+    }),
+  ])
+
+  // Build a map of clientId -> consultationStatus
+  const consultationStatusMap = new Map(
+    clientRelations.map((r) => [r.clientId, r.consultationStatus])
+  )
+
+  const assignedIds = new Set(clientRelations.map((r) => r.clientId))
+  const allClientIds = [
+    ...assignedIds,
+    ...bookingRows.map((b) => b.clientId).filter((id) => !assignedIds.has(id)),
+  ]
+
+  const clients = await prisma.user.findMany({
+    where: { id: { in: allClientIds } },
     include: {
-      client: {
-        include: {
-          clientBookings: {
-            where: { counsellorId: profile.id },
-            select: {
-              id: true,
-              status: true,
-              startTime: true,
-            },
-            orderBy: { startTime: 'desc' },
-          },
-        },
+      clientBookings: {
+        where: { counsellorId: profile.id },
+        select: { id: true, status: true, startTime: true },
+        orderBy: { startTime: 'desc' },
       },
     },
-    orderBy: {
-      assignedAt: 'desc',
-    },
   })
-
-  const clients = clientRelations.map((rel) => rel.client)
 
   // Calculate stats
   const activeClients = clients.filter((c) => {
@@ -64,6 +76,10 @@ export default async function ClientsPage() {
   }).length
 
   const totalSessions = clients.reduce((sum, c) => sum + c.clientBookings.length, 0)
+
+  const pendingConsultations = clientRelations.filter(
+    (r) => r.consultationStatus === 'PENDING' || r.consultationStatus === 'SCHEDULED'
+  ).length
 
   return (
     <div className="min-h-screen bg-cream">
@@ -83,6 +99,23 @@ export default async function ClientsPage() {
             </Link>
           </div>
         </div>
+
+        {/* Consultation Pending Banner */}
+        {pendingConsultations > 0 && (
+          <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
+            <span className="text-2xl">⚠️</span>
+            <div>
+              <div className="font-semibold text-amber-800 mb-1">
+                {pendingConsultations} client{pendingConsultations > 1 ? 's' : ''} awaiting consultation
+              </div>
+              <p className="text-sm text-amber-700">
+                Consultations must be completed before counselling sessions can begin. Clients with
+                a &quot;Consultation Pending&quot; or &quot;Consultation Booked&quot; badge below need their
+                initial consultation session.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Stats Cards */}
         <div className="grid md:grid-cols-4 gap-6 mb-8">
@@ -104,11 +137,11 @@ export default async function ClientsPage() {
           </div>
 
           <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Avg Per Client</div>
-            <div className="font-display text-4xl font-bold text-charcoal">
-              {clients.length > 0 ? (totalSessions / clients.length).toFixed(1) : '0'}
+            <div className="text-sm font-semibold uppercase text-slate mb-2">Consultations Due</div>
+            <div className={`font-display text-4xl font-bold ${pendingConsultations > 0 ? 'text-amber-600' : 'text-charcoal'}`}>
+              {pendingConsultations}
             </div>
-            <div className="text-sm text-slate">sessions</div>
+            <div className="text-sm text-slate">pending or scheduled</div>
           </div>
         </div>
 
@@ -132,7 +165,11 @@ export default async function ClientsPage() {
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {clients.map((client) => (
-                <ClientCard key={client.id} client={client} />
+                <ClientCard
+                  key={client.id}
+                  client={client}
+                  consultationStatus={consultationStatusMap.get(client.id)}
+                />
               ))}
             </div>
           )}

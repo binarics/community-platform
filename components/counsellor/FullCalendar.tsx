@@ -10,6 +10,7 @@ interface Booking {
   endTime: string
   status: string
   sessionType: string
+  isConsultation?: boolean
   client: {
     id: string
     name: string
@@ -201,7 +202,8 @@ export function FullCalendar({
     setDraggedBooking(null)
   }
 
-  function getStatusColor(status: string) {
+  function getStatusColor(status: string, isConsultation?: boolean) {
+    if (isConsultation) return 'bg-violet-500'
     switch (status) {
       case 'SCHEDULED': return 'bg-sage-500'
       case 'COMPLETED': return 'bg-green-500'
@@ -459,8 +461,9 @@ function MonthView({
                       draggable
                       onDragStart={() => onDragStart(booking)}
                       onClick={() => onBookingClick(booking)}
-                      className={`text-xs p-1.5 rounded cursor-pointer ${getStatusColor(booking.status)} text-white truncate hover:opacity-80 transition`}
+                      className={`text-xs p-1.5 rounded cursor-pointer ${getStatusColor(booking.status, booking.isConsultation)} text-white truncate hover:opacity-80 transition`}
                     >
+                      {booking.isConsultation && '📋 '}
                       {new Date(booking.startTime).toLocaleTimeString('en-US', {
                         hour: 'numeric',
                         minute: '2-digit'
@@ -543,9 +546,12 @@ function WeekView({ currentDate, bookings, onDragStart, onDrop, onBookingClick, 
                       draggable
                       onDragStart={() => onDragStart(booking)}
                       onClick={() => onBookingClick(booking)}
-                      className={`text-xs p-1.5 rounded mb-1 cursor-pointer ${getStatusColor(booking.status)} text-white hover:opacity-80 transition`}
+                      className={`text-xs p-1.5 rounded mb-1 cursor-pointer ${getStatusColor(booking.status, booking.isConsultation)} text-white hover:opacity-80 transition`}
                     >
-                      <div className="font-semibold">{booking.client.name}</div>
+                      <div className="font-semibold">
+                        {booking.isConsultation && '📋 '}
+                        {booking.client.name}
+                      </div>
                       <div className="opacity-90">
                         {new Date(booking.startTime).toLocaleTimeString('en-US', {
                           hour: 'numeric',
@@ -600,11 +606,14 @@ function DayView({ currentDate, bookings, onDragStart, onDrop, onBookingClick, g
                     draggable
                     onDragStart={() => onDragStart(booking)}
                     onClick={() => onBookingClick(booking)}
-                    className={`p-3 rounded-xl mb-2 cursor-pointer ${getStatusColor(booking.status)} text-white hover:opacity-90 transition`}
+                    className={`p-3 rounded-xl mb-2 cursor-pointer ${getStatusColor(booking.status, booking.isConsultation)} text-white hover:opacity-90 transition`}
                   >
                     <div className="flex items-start justify-between mb-1">
-                      <div className="font-semibold">{booking.client.name}</div>
-                      <span className="text-xs opacity-90">{booking.sessionType}</span>
+                      <div className="font-semibold">
+                        {booking.isConsultation && '📋 '}
+                        {booking.client.name}
+                      </div>
+                      <span className="text-xs opacity-90">{booking.isConsultation ? 'CONSULTATION' : booking.sessionType}</span>
                     </div>
                     <div className="text-sm opacity-90">
                       {new Date(booking.startTime).toLocaleTimeString('en-US', {
@@ -659,7 +668,7 @@ function AgendaView({ bookings, currentDate, onBookingClick, getStatusColor }: a
           >
             <div className="flex items-start gap-6">
               {/* Date Badge */}
-              <div className={`${getStatusColor(booking.status)} text-white px-4 py-3 rounded-xl text-center min-w-[80px]`}>
+              <div className={`${getStatusColor(booking.status, booking.isConsultation)} text-white px-4 py-3 rounded-xl text-center min-w-[80px]`}>
                 <div className="text-xs font-semibold uppercase">
                   {new Date(booking.startTime).toLocaleDateString('en-US', { weekday: 'short' })}
                 </div>
@@ -690,13 +699,13 @@ function AgendaView({ bookings, currentDate, onBookingClick, getStatusColor }: a
                       })}
                     </div>
                   </div>
-                  <span className={`badge ${getStatusColor(booking.status)} text-white`}>
-                    {booking.status}
+                  <span className={`badge ${getStatusColor(booking.status, booking.isConsultation)} text-white`}>
+                    {booking.isConsultation ? 'CONSULTATION' : booking.status}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-4 text-sm text-slate">
-                  <span>📋 {booking.sessionType}</span>
+                  <span>📋 {booking.isConsultation ? 'Consultation' : booking.sessionType}</span>
                   {booking.room && <span>🏢 {booking.room.name}</span>}
                 </div>
               </div>

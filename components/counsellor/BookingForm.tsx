@@ -301,6 +301,7 @@ export function BookingForm({ counsellorId, clients, rooms, preSelectedClientId 
               <option value="FAMILY">Family Therapy</option>
               <option value="GROUP">Group Therapy</option>
               <option value="ASSESSMENT">Initial Assessment</option>
+              <option value="CONSULTATION">Initial Consultation</option>
             </select>
           </div>
 
