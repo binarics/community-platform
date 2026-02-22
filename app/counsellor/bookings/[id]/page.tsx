@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { Navigation } from '@/components/Navigation'
 import Link from 'next/link'
+import { PaymentUpdatePanel } from '@/components/counsellor/PaymentUpdatePanel'
 
 export default async function BookingDetailPage({ params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions)
@@ -154,6 +155,11 @@ export default async function BookingDetailPage({ params }: { params: { id: stri
                   }`}>
                     {booking.paymentStatus}
                   </span>
+                  {booking.paymentAmount != null && (
+                    <div className="text-sm font-semibold text-charcoal mt-1">
+                      £{booking.paymentAmount.toFixed(2)}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -318,6 +324,17 @@ export default async function BookingDetailPage({ params }: { params: { id: stri
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Payment Panel */}
+            <PaymentUpdatePanel
+              bookingId={booking.id}
+              paymentStatus={booking.paymentStatus}
+              paymentAmount={booking.paymentAmount ?? null}
+              referralFeePaid={booking.referralFeePaid}
+              referralFeeAmount={booking.referralFeeAmount ?? null}
+              isConsultation={booking.sessionType === 'CONSULTATION'}
+              sessionCompleted={booking.status === 'COMPLETED'}
+            />
+
             {/* Client Info */}
             <div className="card p-6">
               <h3 className="font-display text-xl font-bold text-charcoal mb-4">
