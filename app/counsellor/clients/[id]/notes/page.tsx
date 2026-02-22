@@ -92,28 +92,6 @@ export default async function ClientNotesPage({ params }: { params: { id: string
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Total Notes</div>
-            <div className="font-display text-4xl font-bold text-charcoal">{totalNotes}</div>
-          </div>
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">
-              Sessions with Notes
-            </div>
-            <div className="font-display text-4xl font-bold text-sage-600">
-              {notesWithSessions.length}
-            </div>
-          </div>
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Total Sessions</div>
-            <div className="font-display text-4xl font-bold text-slate">
-              {client.clientBookings.length}
-            </div>
-          </div>
-        </div>
-
         {/* SOAP Guide */}
         <div className="card p-6 mb-8 bg-sage-50 border border-sage-100">
           <div className="flex items-start gap-3">

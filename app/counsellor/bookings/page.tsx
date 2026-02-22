@@ -96,27 +96,6 @@ export default async function CounsellorBookingsPage({
           </Link>
         </div>
 
-        {/* Stats */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Total</div>
-            <div className="font-display text-4xl font-bold text-charcoal">{counts.all}</div>
-          </div>
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Scheduled</div>
-            <div className="font-display text-4xl font-bold text-blue-600">{counts.scheduled}</div>
-          </div>
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Completed</div>
-            <div className="font-display text-4xl font-bold text-green-600">{counts.completed}</div>
-          </div>
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Unpaid</div>
-            <div className="font-display text-4xl font-bold text-amber-600">{counts.unpaid}</div>
-            <div className="text-sm text-slate">completed sessions</div>
-          </div>
-        </div>
-
         {/* Filters */}
         <div className="card p-4 mb-6 flex flex-wrap gap-2">
           <Link
