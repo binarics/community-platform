@@ -116,7 +116,7 @@ export default async function HomePage() {
                       {event.title}
                     </h3>
                     <div className="text-sage-500 font-semibold text-sm mb-3">
-                      {event.organisation.name}
+                      {event.organisation?.name}
                     </div>
                     <div className="flex gap-3 text-sm text-slate">
                       <span>🕐 {time}</span>
