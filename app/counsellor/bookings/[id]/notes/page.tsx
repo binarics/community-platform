@@ -177,7 +177,7 @@ export default async function SessionNotesPage({ params }: { params: { id: strin
                           <p className="text-slate text-sm whitespace-pre-wrap">{note.plan}</p>
                         </div>
                       </div>
-                    </>
+                    </div>
                   ))}
                 </div>
               </div>

@@ -112,7 +112,7 @@ export default async function ClientsPage() {
                 initial consultation session.
               </p>
             </div>
-          </>
+          </div>
         )}
 
         {/* Stats Cards */}

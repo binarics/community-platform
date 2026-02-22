@@ -102,7 +102,7 @@ export default async function BookRoomPage({ searchParams }: { searchParams: { d
             <p className="text-slate mb-6">
               No rooms have been set up yet. Contact your administrator to add rooms.
             </p>
-          </>
+          </div>
         ) : (
           <div className="card p-8">
             <RoomBookingForm
