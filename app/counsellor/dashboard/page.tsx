@@ -3,6 +3,7 @@ import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
+import { getActiveCounsellorWhere } from '@/lib/counsellor-auth'
 
 export default async function CounsellorDashboardPage() {
   const session = await getServerSession(authOptions)
@@ -23,12 +24,12 @@ export default async function CounsellorDashboardPage() {
     },
   })
 
-  // If SUPER_ADMIN and no profile, get first counsellor profile for demo
-  if (!counsellorProfile && session.user.role === 'SUPER_ADMIN') {
+  // SUPER_ADMIN: respect the cookie-selected counsellor
+  if (session.user.role === 'SUPER_ADMIN') {
+    const where = await getActiveCounsellorWhere(session.user.id, session.user.role)
     counsellorProfile = await prisma.counsellorProfile.findFirst({
-      include: {
-        user: true,
-      },
+      where: where ?? undefined,
+      include: { user: true },
     })
   }
 
