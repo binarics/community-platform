@@ -200,7 +200,7 @@ export default async function SuperAdminDashboard() {
                   </Link>
                 ))}
               </div>
-            </>
+            </div>
           )}
 
           {/* Recent Users */}

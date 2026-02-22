@@ -159,7 +159,7 @@ export default async function AdminBookingsPage({
             <div className="text-6xl mb-4">🗓️</div>
             <h3 className="font-display text-2xl font-bold text-charcoal mb-2">No Bookings Found</h3>
             <p className="text-slate">Try adjusting your filters</p>
-          </>
+          </div>
         ) : (
           <>
             <div className="mb-4 text-sm text-slate">

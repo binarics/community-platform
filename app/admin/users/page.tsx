@@ -146,7 +146,7 @@ export default async function UsersManagement({ searchParams }: { searchParams: 
                       {user._count.organisedEvents > 0 && (
                         <div className="text-slate">
                           📅 {user._count.organisedEvents} events
-                        </>
+                        </div>
                       )}
                       {user._count.rsvps > 0 && (
                         <div className="text-slate">

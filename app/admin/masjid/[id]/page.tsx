@@ -130,7 +130,7 @@ export default async function MasjidDetailPage({ params }: { params: { id: strin
                 <Link href={`/admin/masjid/${masjid.id}/events/new`} className="btn btn-primary">
                   + New Event
                 </Link>
-              </>
+              </div>
             )}
           </div>
         </div>
