@@ -134,6 +134,6 @@ export default async function CreateBookingPage({ searchParams }: { searchParams
           </div>
         )}
       </div>
-    </div>
+    </>
   )
 }

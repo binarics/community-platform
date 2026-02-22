@@ -302,6 +302,6 @@ export default async function SessionNotesPage({ params }: { params: { id: strin
           </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }

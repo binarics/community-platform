@@ -142,6 +142,6 @@ export default async function SignOutPage({ params }: { params: { id: string } }
           </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }

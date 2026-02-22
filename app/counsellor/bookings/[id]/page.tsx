@@ -423,6 +423,6 @@ export default async function BookingDetailPage({ params }: { params: { id: stri
           </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }

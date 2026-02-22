@@ -265,6 +265,6 @@ export default async function AdminEventsPage({ searchParams }: {
           )}
         </div>
       </div>
-    </div>
+    </>
   )
 }

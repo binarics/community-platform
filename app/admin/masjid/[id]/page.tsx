@@ -172,6 +172,6 @@ export default async function MasjidDetailPage({ params }: { params: { id: strin
           </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }

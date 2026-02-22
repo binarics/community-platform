@@ -144,6 +144,6 @@ export default async function BookRoomPage({ searchParams }: { searchParams: { d
           </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }

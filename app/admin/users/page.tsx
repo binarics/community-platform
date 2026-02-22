@@ -207,6 +207,6 @@ export default async function UsersManagement({ searchParams }: { searchParams: 
           </div>
         )}
       </div>
-    </div>
+    </>
   )
 }

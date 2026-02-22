@@ -190,6 +190,6 @@ export default async function CounsellorRoomsPage() {
           </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }
