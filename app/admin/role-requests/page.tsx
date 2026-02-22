@@ -67,7 +67,7 @@ export default async function RoleRequestsPage() {
               <p className="text-slate">
                 No pending role requests at the moment.
               </p>
-            </>
+            </div>
           ) : (
             <div className="space-y-6">
               {requests.map((request) => (

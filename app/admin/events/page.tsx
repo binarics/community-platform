@@ -170,7 +170,7 @@ export default async function AdminEventsPage({ searchParams }: {
                 No Events Found
               </h3>
               <p className="text-slate">Try adjusting your filters</p>
-            </>
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">

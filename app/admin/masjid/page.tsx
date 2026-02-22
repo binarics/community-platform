@@ -156,7 +156,7 @@ export default async function AdminMasjidPage() {
             <Link href="/admin/masjid/new" className="btn btn-primary inline-flex">
               Create First Masjid
             </Link>
-          </>
+          </div>
         )}
       </div>
     </>
