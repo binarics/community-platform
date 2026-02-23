@@ -11,15 +11,10 @@ export default async function CounsellorRoomsPage() {
     redirect('/counsellor/dashboard')
   }
 
-  // Get all rooms
+  // Get all rooms — no longer fetching _count.bookings
   const rooms = await prisma.room.findMany({
     include: {
       organisation: true,
-      _count: {
-        select: {
-          bookings: true,
-        },
-      },
     },
     orderBy: {
       name: 'asc',
@@ -126,46 +121,83 @@ export default async function CounsellorRoomsPage() {
               </p>
             </div>
           ) : (
-            <div className="grid md:grid-cols-3 gap-6">
-              {rooms.map((room) => (
-                <div key={room.id} className="card p-6">
-                  <div className="text-4xl mb-3">🏠</div>
-                  <h3 className="font-display text-xl font-bold text-charcoal mb-2">
-                    {room.name}
-                  </h3>
-                  <div className="text-sm text-slate mb-4">
-                    {room.organisation.name}
-                  </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {rooms.map((room) => {
+                let facilities: string[] = []
+                try {
+                  if (room.facilities) facilities = JSON.parse(room.facilities)
+                } catch {
+                  // not valid JSON — treat as plain text
+                  if (room.facilities) facilities = [room.facilities]
+                }
 
-                  {room.description && (
-                    <p className="text-sm text-slate mb-4">{room.description}</p>
-                  )}
+                return (
+                  <div key={room.id} className="card p-6 flex flex-col">
+                    {/* Room header */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <h3 className="font-display text-xl font-bold text-charcoal">
+                          {room.name}
+                        </h3>
+                        <div className="text-sm text-slate mt-0.5">
+                          {room.organisation.name}
+                        </div>
+                      </div>
+                      <div className="text-3xl">🏠</div>
+                    </div>
 
-                  <div className="space-y-2 text-sm mb-4">
+                    {/* Description */}
+                    {(room as any).description && (
+                      <p className="text-sm text-slate mb-4">{(room as any).description}</p>
+                    )}
+
+                    {/* Capacity */}
                     {room.capacity && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-slate">Capacity:</span>
-                        <span className="font-semibold text-charcoal">
-                          {room.capacity} people
+                      <div className="flex items-center gap-2 text-sm mb-4">
+                        <span className="text-slate">👥</span>
+                        <span className="text-charcoal font-medium">
+                          Capacity: {room.capacity} {room.capacity === 1 ? 'person' : 'people'}
                         </span>
                       </div>
                     )}
-                    <div className="flex items-center gap-2">
-                      <span className="text-slate">Total bookings:</span>
-                      <span className="font-semibold text-charcoal">
-                        {room._count.bookings}
-                      </span>
+
+                    {/* Facilities */}
+                    {facilities.length > 0 && (
+                      <div className="mb-4">
+                        <div className="text-xs font-semibold uppercase text-slate mb-2">
+                          Facilities
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {facilities.map((f) => (
+                            <span
+                              key={f}
+                              className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-sage-50 text-sage-700 border border-sage-100"
+                            >
+                              {f}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="mt-auto pt-4 flex flex-col gap-2">
+                      <Link
+                        href={`/counsellor/rooms/${room.id}/schedule`}
+                        className="btn btn-outline w-full justify-center text-sm"
+                      >
+                        📅 View Schedule
+                      </Link>
+                      <Link
+                        href={`/counsellor/bookings/new?roomId=${room.id}`}
+                        className="btn btn-primary w-full justify-center text-sm"
+                      >
+                        Book This Room
+                      </Link>
                     </div>
                   </div>
-
-                  <Link
-                    href={`/counsellor/bookings/new?roomId=${room.id}`}
-                    className="btn btn-outline w-full justify-center text-sm"
-                  >
-                    Book This Room
-                  </Link>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
