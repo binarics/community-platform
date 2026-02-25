@@ -132,6 +132,7 @@ export default async function CalendarPage({ searchParams }: {
             clients={clients}
             rooms={rooms}
             counsellorId={profile?.id || ''}
+            isSuperAdmin={session.user.role === 'SUPER_ADMIN'}
             initialView={searchParams.view || 'month'}
             initialDate={searchParams.date}
             availability={availability}
