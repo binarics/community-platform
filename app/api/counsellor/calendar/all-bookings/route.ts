@@ -11,55 +11,73 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get all bookings for all counsellors
-    // This is for the public/shared calendar view
+    const isSuperAdmin = session.user.role === 'SUPER_ADMIN'
+
+    // Get current user's counsellor profile ID so we can show full data for own bookings
+    const myProfile = await prisma.counsellorProfile.findFirst({
+      where: { userId: session.user.id },
+      select: { id: true },
+    })
+
     const bookings = await prisma.booking.findMany({
       where: {
         status: {
-          in: ['SCHEDULED', 'IN_PROGRESS', 'COMPLETED']
-        }
+          in: ['SCHEDULED', 'IN_PROGRESS', 'COMPLETED'],
+        },
       },
       include: {
+        client: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         room: {
           select: {
             id: true,
             name: true,
-          }
+          },
         },
         counsellor: {
           select: {
+            id: true,
             user: {
               select: {
                 name: true,
-              }
-            }
-          }
+              },
+            },
+          },
         },
-        // DO NOT include client details for privacy
-        // Client info will be anonymized in the response
       },
       orderBy: {
         startTime: 'asc',
       },
     })
 
-    // Anonymize client information for privacy
-    const anonymizedBookings = bookings.map(booking => ({
-      id: booking.id,
-      startTime: booking.startTime,
-      endTime: booking.endTime,
-      status: booking.status,
-      room: booking.room,
-      counsellor: booking.counsellor,
-      // Client name is NOT included - will show as "Busy" in the UI
-      client: {
-        name: null, // Anonymized for privacy
+    // Return client details for own bookings or SUPER_ADMIN; anonymize for others
+    const result = bookings.map((booking) => {
+      const isOwn = isSuperAdmin || booking.counsellorId === myProfile?.id
+      return {
+        id: booking.id,
+        startTime: booking.startTime,
+        endTime: booking.endTime,
+        status: booking.status,
+        sessionType: booking.sessionType,
+        isConsultation: booking.isConsultation,
+        counsellorId: booking.counsellorId,
+        room: booking.room,
+        counsellor: booking.counsellor
+          ? { user: { name: booking.counsellor.user.name } }
+          : null,
+        client: isOwn
+          ? { id: booking.client?.id ?? null, name: booking.client?.name ?? null }
+          : { id: null, name: null },
       }
-    }))
+    })
 
-    return NextResponse.json({ 
-      bookings: anonymizedBookings,
-      message: 'All bookings retrieved (client info anonymized)'
+    return NextResponse.json({
+      bookings: result,
+      message: 'All bookings retrieved',
     })
   } catch (error) {
     console.error('Fetch all bookings error:', error)
