@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { PaymentUpdatePanel } from '@/components/counsellor/PaymentUpdatePanel'
+import { CancelBookingButton } from '@/components/counsellor/CancelBookingButton'
 
 export default async function BookingDetailPage({ params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions)
@@ -312,9 +313,15 @@ export default async function BookingDetailPage({ params }: { params: { id: stri
                 )}
 
                 {booking.status === 'SCHEDULED' && isFuture && (
-                  <button className="btn btn-outline text-red-600 border-red-200 hover:bg-red-50">
-                    ✕ Cancel Session
-                  </button>
+                  <CancelBookingButton
+                    bookingId={booking.id}
+                    clientName={booking.client.name || 'this client'}
+                    sessionDate={new Date(booking.startTime).toLocaleDateString('en-US', {
+                      weekday: 'long',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
+                  />
                 )}
               </div>
             </div>
