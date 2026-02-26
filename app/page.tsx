@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { Navigation } from '@/components/Navigation'
 
+export const dynamic = 'force-dynamic'
+
 export default async function HomePage() {
   const upcomingEvents = await prisma.event.findMany({
     where: {
