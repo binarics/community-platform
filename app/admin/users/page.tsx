@@ -31,7 +31,7 @@ export default async function UsersManagement({ searchParams }: { searchParams: 
       _count: {
         select: {
           organisedEvents: true,
-          //rsvps: true,
+          eventRSVPs: true,
           comments: true,
           clientBookings: true,
         },
@@ -148,9 +148,9 @@ export default async function UsersManagement({ searchParams }: { searchParams: 
                           📅 {user._count.organisedEvents} events
                         </div>
                       )}
-                      {user._count.rsvps > 0 && (
+                      {user._count.eventRSVPs > 0 && (
                         <div className="text-slate">
-                          ✓ {user._count.rsvps} RSVPs
+                          ✓ {user._count.eventRSVPs} RSVPs
                         </div>
                       )}
                       {user._count.comments > 0 && (
