@@ -9,7 +9,7 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 // Email sender configuration
 const FROM_EMAIL = process.env.EMAIL_FROM || 'noreply@yourdomain.com'
 const PLATFORM_NAME = 'Community Platform'
-const BASE_URL = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+const BASE_URL = process.env.NEXTAUTH_URL || 'https://community-platform-lemon.vercel.app'
 
 /**
  * Send verification email to new users

@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { signIn } from 'next-auth/react'
 import Link from 'next/link'
 
 export default function RegisterPage() {
@@ -50,20 +49,7 @@ export default function RegisterPage() {
         return
       }
 
-      const result = await signIn('credentials', {
-        email: formData.email,
-        password: formData.password,
-        redirect: false,
-      })
-
-      if (result?.error) {
-        setError('Registration successful but login failed. Please sign in.')
-        setLoading(false)
-        return
-      }
-
-      router.push('/discover')
-      router.refresh()
+      router.push(`/verify-email/pending?email=${encodeURIComponent(formData.email)}`)
     } catch {
       setError('Something went wrong. Please try again.')
       setLoading(false)
