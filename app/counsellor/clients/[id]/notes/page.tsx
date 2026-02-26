@@ -190,7 +190,7 @@ export default async function ClientNotesPage({ params }: { params: { id: string
                     {notes.map((note, index) => (
                       <SessionNoteCard
                         key={note.id}
-                        note={note}
+                        note={{ ...note, content: null }}
                         bookingId={booking.id}
                         isLatest={index === 0}
                       />
