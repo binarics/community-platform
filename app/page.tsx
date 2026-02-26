@@ -5,18 +5,25 @@ import { Navigation } from '@/components/Navigation'
 export const dynamic = 'force-dynamic'
 
 export default async function HomePage() {
-  const upcomingEvents = await prisma.event.findMany({
-    where: {
-      status: 'PUBLISHED',
-      startDate: { gte: new Date() },
-    },
-    include: {
-      organisation: true,
-      _count: { select: { rsvps: true } },
-    },
-    take: 6,
-    orderBy: { startDate: 'asc' },
-  })
+  let upcomingEvents: Awaited<ReturnType<typeof prisma.event.findMany<{
+    include: { organisation: true; _count: { select: { rsvps: true } } }
+  }>>> = []
+  try {
+    upcomingEvents = await prisma.event.findMany({
+      where: {
+        status: 'PUBLISHED',
+        startDate: { gte: new Date() },
+      },
+      include: {
+        organisation: true,
+        _count: { select: { rsvps: true } },
+      },
+      take: 6,
+      orderBy: { startDate: 'asc' },
+    })
+  } catch {
+    // Database not yet migrated; render page with empty list
+  }
 
   return (
     <div className="min-h-screen">
