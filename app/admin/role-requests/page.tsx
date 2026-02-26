@@ -21,6 +21,7 @@ export default async function RoleRequestsPage() {
             select: {
               organisedEvents: true,
               comments: true,
+              eventRSVPs: true,
             },
           },
         },
@@ -127,7 +128,7 @@ export default async function RoleRequestsPage() {
                       </div>
                       <div>
                         <span className="font-semibold text-sage-600">
-                          {request.user._count.rsvps}
+                          {request.user._count.eventRSVPs}
                         </span>
                         <span className="text-slate"> RSVPs</span>
                       </div>
