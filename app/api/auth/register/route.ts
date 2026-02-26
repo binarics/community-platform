@@ -3,7 +3,6 @@ import { prisma } from '@/lib/prisma'
 import { sendVerificationEmail } from '@/lib/email'
 import bcrypt from 'bcryptjs'
 import { randomBytes } from 'crypto'
-import { sendVerificationEmail } from '@/lib/email'
 
 export async function POST(request: Request) {
   try {
