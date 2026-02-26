@@ -3,6 +3,7 @@ import { Crimson_Pro, DM_Sans } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/Providers'
 import { Analytics } from '@vercel/analytics/next'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 
 const crimsonPro = Crimson_Pro({
   subsets: ['latin'],
@@ -33,6 +34,7 @@ export default function RootLayout({
           {children}
         </Providers>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )
