@@ -98,7 +98,7 @@ model Organisation {
 
 model Event {
   id                   String       @id @default(cuid())
-  masjidId             String
+  masjidId             String?
   title                String?
   slug                 String?       @unique
   description          String?
