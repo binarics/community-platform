@@ -113,7 +113,7 @@ export default async function BookRoomPage({ searchParams }: { searchParams: { d
           <div className="card p-8">
             <RoomBookingForm
               counsellorId={profile?.id || ''}
-              rooms={rooms}
+              rooms={rooms.map(r => ({ ...r, facilities: r.facilities ?? undefined }))}
               clients={clients}
               preSelectedDate={searchParams.date}
               preSelectedTime={searchParams.time}
