@@ -1,148 +1,63 @@
-// app/api/cron/send-reminders/route.ts
-// This endpoint should be called by a cron job (e.g., Vercel Cron, GitHub Actions, or external cron service)
-// Schedule: Run every hour to check for bookings that need reminders
-
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendBookingReminderEmail } from '@/lib/email'
 
 export async function GET(request: Request) {
+  const authHeader = request.headers.get('authorization')
+  const cronSecret = process.env.CRON_SECRET
+  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
   try {
-    // Verify cron secret to prevent unauthorized access
-    const authHeader = request.headers.get('authorization')
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Get current time
     const now = new Date()
-    
-    // Calculate 24 hours from now (with 1 hour window)
-    const reminderStart = new Date(now)
-    reminderStart.setHours(reminderStart.getHours() + 23)
-    
-    const reminderEnd = new Date(now)
-    reminderEnd.setHours(reminderEnd.getHours() + 25)
-
-    // Find bookings that:
-    // 1. Start in 23-25 hours
-    // 2. Haven't had reminder sent yet
-    // 3. Are not cancelled
-    const bookingsToRemind = await prisma.booking.findMany({
+    const windowStart = new Date(now.getTime() + 24 * 60 * 60 * 1000)
+    const windowEnd = new Date(now.getTime() + 26 * 60 * 60 * 1000)
+    const upcomingBookings = await prisma.booking.findMany({
       where: {
-        startTime: {
-          gte: reminderStart,
-          lte: reminderEnd,
-        },
+        status: 'SCHEDULED',
         reminderSent: false,
-        status: {
-          in: ['SCHEDULED', 'IN_PROGRESS'],
-        },
+        startTime: { gte: windowStart, lte: windowEnd },
       },
       include: {
-        client: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
-            emailVerified: true,
-          },
-        },
-        counsellor: {
-          include: {
-            user: {
-              select: {
-                name: true,
-              },
-            },
-          },
-        },
-        room: {
-          select: {
-            name: true,
-          },
-        },
+        client: { select: { name: true, email: true } },
+        room: { select: { name: true } },
+        counsellor: { include: { user: { select: { name: true, email: true } } } },
       },
     })
-
-    console.log(`Found ${bookingsToRemind.length} bookings to send reminders for`)
-
-    const results = []
-
-    // Send reminder emails
-    for (const booking of bookingsToRemind) {
-      // Skip if client email not verified
-      if (!booking.client.emailVerified) {
-        console.log(`Skipping reminder for ${booking.client.email} - email not verified`)
-        continue
+    if (upcomingBookings.length === 0) {
+      return NextResponse.json({ message: 'No reminders to send', sent: 0 })
+    }
+    let sent = 0
+    const errors: string[] = []
+    for (const booking of upcomingBookings) {
+      const payload = {
+        id: booking.id,
+        counsellorName: booking.counsellor.user.name || 'Your Counsellor',
+        startTime: booking.startTime,
+        endTime: booking.endTime,
+        roomName: booking.room?.name,
       }
-
       try {
-        const result = await sendBookingReminderEmail(
-          booking.client.email,
-          booking.client.name || 'Client',
-          {
-            id: booking.id,
-            counsellorName: booking.counsellor.user.name || 'Your counsellor',
-            startTime: booking.startTime,
-            endTime: booking.endTime,
-            roomName: booking.room?.name,
-          }
-        )
-
-        if (result.success) {
-          // Mark reminder as sent
-          await prisma.booking.update({
-            where: { id: booking.id },
-            data: {
-              reminderSent: true,
-              reminderSentAt: new Date(),
-            },
-          })
-
-          results.push({
-            bookingId: booking.id,
-            clientEmail: booking.client.email,
-            status: 'sent',
-          })
-
-          console.log(`Reminder sent for booking ${booking.id}`)
-        } else {
-          results.push({
-            bookingId: booking.id,
-            clientEmail: booking.client.email,
-            status: 'failed',
-            error: result.error,
-          })
-
-          console.error(`Failed to send reminder for booking ${booking.id}`)
-        }
-      } catch (error) {
-        console.error(`Error sending reminder for booking ${booking.id}:`, error)
-        results.push({
-          bookingId: booking.id,
-          clientEmail: booking.client.email,
-          status: 'error',
-          error: String(error),
+        await Promise.all([
+          sendBookingReminderEmail(booking.client.email, booking.client.name || 'there', payload),
+          sendBookingReminderEmail(booking.counsellor.user.email, booking.counsellor.user.name || 'there', payload),
+        ])
+        await prisma.booking.update({
+          where: { id: booking.id },
+          data: { reminderSent: true, reminderSentAt: new Date() },
         })
+        sent++
+      } catch (err) {
+        errors.push(`Booking ${booking.id}: ${String(err)}`)
       }
     }
-
     return NextResponse.json({
-      message: `Processed ${bookingsToRemind.length} bookings`,
-      results,
-      timestamp: new Date().toISOString(),
+      message: `Reminders sent for ${sent} of ${upcomingBookings.length} bookings`,
+      sent,
+      ...(errors.length > 0 && { errors }),
     })
   } catch (error) {
-    console.error('Send reminders cron error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error', details: String(error) },
-      { status: 500 }
-    )
+    console.error('Cron send-reminders error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}
-
-// Also support POST for manual triggering
-export async function POST(request: Request) {
-  return GET(request)
 }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { sendRoleRequestApprovedEmail } from '@/lib/email'
 
 export async function POST(
   request: Request,
@@ -50,6 +51,14 @@ export async function POST(
       where: { id: roleRequest.userId },
       data: { role: roleRequest.requestedRole },
     })
+
+    // Email the user with the good news
+    await sendRoleRequestApprovedEmail(
+      roleRequest.user.email,
+      roleRequest.user.name || 'there',
+      roleRequest.requestedRole,
+      reviewNotes || undefined
+    )
 
     return NextResponse.json({
       message: 'Role request approved successfully',

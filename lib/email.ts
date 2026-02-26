@@ -569,3 +569,440 @@ export async function sendClientWelcomeEmail(
     return { success: false, error }
   }
 }
+
+// ─── Role Request Emails ───────────────────────────────────────────────────────
+
+/**
+ * Acknowledge receipt of a role request to the user who submitted it
+ */
+export async function sendRoleRequestReceivedEmail(
+  email: string,
+  name: string,
+  requestedRole: string
+) {
+  const roleLabel = requestedRole.replace('_', ' ')
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: `Role Request Received – ${PLATFORM_NAME}`,
+      html: `
+        <!DOCTYPE html><html><head><meta charset="utf-8"></head>
+        <body style="margin:0;padding:0;font-family:'Segoe UI',sans-serif;background:#f5f5f0;">
+          <table width="100%" cellspacing="0" cellpadding="0"><tr><td align="center" style="padding:40px 20px;">
+            <table width="600" cellspacing="0" cellpadding="0" style="background:white;border-radius:16px;box-shadow:0 4px 6px rgba(0,0,0,.1);">
+              <tr><td style="padding:40px;text-align:center;background:linear-gradient(135deg,rgb(82,112,82),rgb(61,90,61));border-radius:16px 16px 0 0;">
+                <h1 style="margin:0;color:white;font-size:24px;">Request Received</h1>
+              </td></tr>
+              <tr><td style="padding:40px;">
+                <p style="font-size:16px;color:#333;">Hi ${name},</p>
+                <p style="font-size:16px;color:#333;">We've received your request to become a <strong>${roleLabel}</strong> on ${PLATFORM_NAME}. Our team will review it and get back to you shortly.</p>
+                <p style="font-size:14px;color:#666;">You'll receive an email once a decision has been made.</p>
+              </td></tr>
+              <tr><td style="padding:20px 40px;background:#f9f9f9;border-radius:0 0 16px 16px;text-align:center;">
+                <p style="font-size:12px;color:#999;">© 2026 ${PLATFORM_NAME}. All rights reserved.</p>
+              </td></tr>
+            </table>
+          </td></tr></table>
+        </body></html>
+      `,
+    })
+    return { success: true }
+  } catch (error) {
+    console.error('Error sending role request received email:', error)
+    return { success: false, error }
+  }
+}
+
+/**
+ * Notify a super admin that a new role request is waiting for review
+ */
+export async function sendRoleRequestAdminNotificationEmail(
+  adminEmail: string,
+  adminName: string,
+  userName: string,
+  userEmail: string,
+  requestedRole: string,
+  reason: string,
+  requestId: string
+) {
+  const reviewUrl = `${BASE_URL}/admin/role-requests`
+  const roleLabel = requestedRole.replace('_', ' ')
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: adminEmail,
+      subject: `New Role Request: ${userName} → ${roleLabel}`,
+      html: `
+        <!DOCTYPE html><html><head><meta charset="utf-8"></head>
+        <body style="margin:0;padding:0;font-family:'Segoe UI',sans-serif;background:#f5f5f0;">
+          <table width="100%" cellspacing="0" cellpadding="0"><tr><td align="center" style="padding:40px 20px;">
+            <table width="600" cellspacing="0" cellpadding="0" style="background:white;border-radius:16px;box-shadow:0 4px 6px rgba(0,0,0,.1);">
+              <tr><td style="padding:40px;text-align:center;background:linear-gradient(135deg,rgb(197,90,56),rgb(168,74,47));border-radius:16px 16px 0 0;">
+                <h1 style="margin:0;color:white;font-size:24px;">New Role Request</h1>
+              </td></tr>
+              <tr><td style="padding:40px;">
+                <p style="font-size:16px;color:#333;">Hi ${adminName},</p>
+                <p style="font-size:16px;color:#333;">A new role request has been submitted and is waiting for your review.</p>
+                <table width="100%" cellspacing="0" cellpadding="0" style="background:#f9f9f9;border-radius:8px;margin:20px 0;">
+                  <tr><td style="padding:24px;">
+                    <p style="margin:0 0 8px;font-size:14px;color:#666;">From</p>
+                    <p style="margin:0 0 16px;font-size:16px;color:#333;font-weight:bold;">${userName} (${userEmail})</p>
+                    <p style="margin:0 0 8px;font-size:14px;color:#666;">Requested role</p>
+                    <p style="margin:0 0 16px;font-size:16px;color:#333;font-weight:bold;">${roleLabel}</p>
+                    <p style="margin:0 0 8px;font-size:14px;color:#666;">Reason</p>
+                    <p style="margin:0;font-size:14px;color:#333;">${reason}</p>
+                  </td></tr>
+                </table>
+                <table cellspacing="0" cellpadding="0" width="100%"><tr><td align="center" style="padding:20px 0;">
+                  <a href="${reviewUrl}" style="display:inline-block;padding:16px 32px;background:rgb(197,90,56);color:white;text-decoration:none;border-radius:8px;font-weight:bold;">
+                    Review Request
+                  </a>
+                </td></tr></table>
+              </td></tr>
+            </table>
+          </td></tr></table>
+        </body></html>
+      `,
+    })
+    return { success: true }
+  } catch (error) {
+    console.error('Error sending role request admin notification:', error)
+    return { success: false, error }
+  }
+}
+
+/**
+ * Notify a user their role request was approved
+ */
+export async function sendRoleRequestApprovedEmail(
+  email: string,
+  name: string,
+  approvedRole: string,
+  reviewNotes?: string
+) {
+  const roleLabel = approvedRole.replace('_', ' ')
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: `Your Role Request Has Been Approved – ${PLATFORM_NAME}`,
+      html: `
+        <!DOCTYPE html><html><head><meta charset="utf-8"></head>
+        <body style="margin:0;padding:0;font-family:'Segoe UI',sans-serif;background:#f5f5f0;">
+          <table width="100%" cellspacing="0" cellpadding="0"><tr><td align="center" style="padding:40px 20px;">
+            <table width="600" cellspacing="0" cellpadding="0" style="background:white;border-radius:16px;box-shadow:0 4px 6px rgba(0,0,0,.1);">
+              <tr><td style="padding:40px;text-align:center;background:linear-gradient(135deg,rgb(34,197,94),rgb(22,163,74));border-radius:16px 16px 0 0;">
+                <h1 style="margin:0;color:white;font-size:24px;">✓ Request Approved</h1>
+              </td></tr>
+              <tr><td style="padding:40px;">
+                <p style="font-size:16px;color:#333;">Hi ${name},</p>
+                <p style="font-size:16px;color:#333;">Great news! Your request to become a <strong>${roleLabel}</strong> has been approved. Your account has been updated and you can now access all ${roleLabel} features.</p>
+                ${reviewNotes ? `<div style="background:#f0fdf4;border-left:4px solid rgb(34,197,94);padding:16px;border-radius:0 8px 8px 0;margin:20px 0;"><p style="margin:0;font-size:14px;color:#166534;"><strong>Note from the team:</strong> ${reviewNotes}</p></div>` : ''}
+                <table cellspacing="0" cellpadding="0" width="100%"><tr><td align="center" style="padding:20px 0;">
+                  <a href="${BASE_URL}/login" style="display:inline-block;padding:16px 32px;background:rgb(34,197,94);color:white;text-decoration:none;border-radius:8px;font-weight:bold;">
+                    Sign In to Get Started
+                  </a>
+                </td></tr></table>
+              </td></tr>
+              <tr><td style="padding:20px 40px;background:#f9f9f9;border-radius:0 0 16px 16px;text-align:center;">
+                <p style="font-size:12px;color:#999;">© 2026 ${PLATFORM_NAME}. All rights reserved.</p>
+              </td></tr>
+            </table>
+          </td></tr></table>
+        </body></html>
+      `,
+    })
+    return { success: true }
+  } catch (error) {
+    console.error('Error sending role request approved email:', error)
+    return { success: false, error }
+  }
+}
+
+/**
+ * Notify a user their role request was rejected
+ */
+export async function sendRoleRequestRejectedEmail(
+  email: string,
+  name: string,
+  requestedRole: string,
+  reason: string
+) {
+  const roleLabel = requestedRole.replace('_', ' ')
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: `Update on Your Role Request – ${PLATFORM_NAME}`,
+      html: `
+        <!DOCTYPE html><html><head><meta charset="utf-8"></head>
+        <body style="margin:0;padding:0;font-family:'Segoe UI',sans-serif;background:#f5f5f0;">
+          <table width="100%" cellspacing="0" cellpadding="0"><tr><td align="center" style="padding:40px 20px;">
+            <table width="600" cellspacing="0" cellpadding="0" style="background:white;border-radius:16px;box-shadow:0 4px 6px rgba(0,0,0,.1);">
+              <tr><td style="padding:40px;text-align:center;background:linear-gradient(135deg,rgb(100,116,139),rgb(71,85,105));border-radius:16px 16px 0 0;">
+                <h1 style="margin:0;color:white;font-size:24px;">Role Request Update</h1>
+              </td></tr>
+              <tr><td style="padding:40px;">
+                <p style="font-size:16px;color:#333;">Hi ${name},</p>
+                <p style="font-size:16px;color:#333;">After reviewing your application to become a <strong>${roleLabel}</strong>, we're unable to approve it at this time.</p>
+                <div style="background:#fef2f2;border-left:4px solid rgb(239,68,68);padding:16px;border-radius:0 8px 8px 0;margin:20px 0;">
+                  <p style="margin:0;font-size:14px;color:#991b1b;"><strong>Reason:</strong> ${reason}</p>
+                </div>
+                <p style="font-size:14px;color:#666;">You're welcome to submit a new request in the future if your circumstances change.</p>
+              </td></tr>
+              <tr><td style="padding:20px 40px;background:#f9f9f9;border-radius:0 0 16px 16px;text-align:center;">
+                <p style="font-size:12px;color:#999;">© 2026 ${PLATFORM_NAME}. All rights reserved.</p>
+              </td></tr>
+            </table>
+          </td></tr></table>
+        </body></html>
+      `,
+    })
+    return { success: true }
+  } catch (error) {
+    console.error('Error sending role request rejected email:', error)
+    return { success: false, error }
+  }
+}
+
+// ─── Password Reset Emails ─────────────────────────────────────────────────────
+
+/**
+ * Confirm to a user that their password was successfully changed
+ */
+export async function sendPasswordChangedEmail(email: string, name: string) {
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: `Your Password Has Been Changed – ${PLATFORM_NAME}`,
+      html: `
+        <!DOCTYPE html><html><head><meta charset="utf-8"></head>
+        <body style="margin:0;padding:0;font-family:'Segoe UI',sans-serif;background:#f5f5f0;">
+          <table width="100%" cellspacing="0" cellpadding="0"><tr><td align="center" style="padding:40px 20px;">
+            <table width="600" cellspacing="0" cellpadding="0" style="background:white;border-radius:16px;box-shadow:0 4px 6px rgba(0,0,0,.1);">
+              <tr><td style="padding:40px;text-align:center;background:linear-gradient(135deg,rgb(82,112,82),rgb(61,90,61));border-radius:16px 16px 0 0;">
+                <h1 style="margin:0;color:white;font-size:24px;">Password Changed</h1>
+              </td></tr>
+              <tr><td style="padding:40px;">
+                <p style="font-size:16px;color:#333;">Hi ${name},</p>
+                <p style="font-size:16px;color:#333;">Your password has been successfully changed. You can now sign in with your new password.</p>
+                <div style="background:#fff5f2;border-left:4px solid rgb(197,90,56);padding:16px;border-radius:0 8px 8px 0;margin:20px 0;">
+                  <p style="margin:0;font-size:14px;color:#c55a38;"><strong>⚠️ Didn't make this change?</strong> Contact us immediately as your account may be compromised.</p>
+                </div>
+              </td></tr>
+              <tr><td style="padding:20px 40px;background:#f9f9f9;border-radius:0 0 16px 16px;text-align:center;">
+                <p style="font-size:12px;color:#999;">© 2026 ${PLATFORM_NAME}. All rights reserved.</p>
+              </td></tr>
+            </table>
+          </td></tr></table>
+        </body></html>
+      `,
+    })
+    return { success: true }
+  } catch (error) {
+    console.error('Error sending password changed email:', error)
+    return { success: false, error }
+  }
+}
+
+// ─── Booking Notification Emails ───────────────────────────────────────────────
+
+/**
+ * Notify a counsellor that a new session has been booked for them
+ */
+export async function sendCounsellorBookingConfirmationEmail(
+  email: string,
+  counsellorName: string,
+  booking: {
+    id: string
+    clientName: string
+    startTime: Date
+    endTime: Date
+    roomName?: string
+    sessionType: string
+  }
+) {
+  const bookingUrl = `${BASE_URL}/counsellor/bookings/${booking.id}`
+  const startTime = new Date(booking.startTime)
+  const endTime = new Date(booking.endTime)
+  const dateStr = startTime.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+  const timeStr = `${startTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} – ${endTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`
+
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: `New Session Booked – ${booking.clientName} on ${dateStr}`,
+      html: `
+        <!DOCTYPE html><html><head><meta charset="utf-8"></head>
+        <body style="margin:0;padding:0;font-family:'Segoe UI',sans-serif;background:#f5f5f0;">
+          <table width="100%" cellspacing="0" cellpadding="0"><tr><td align="center" style="padding:40px 20px;">
+            <table width="600" cellspacing="0" cellpadding="0" style="background:white;border-radius:16px;box-shadow:0 4px 6px rgba(0,0,0,.1);">
+              <tr><td style="padding:40px;text-align:center;background:linear-gradient(135deg,rgb(82,112,82),rgb(61,90,61));border-radius:16px 16px 0 0;">
+                <h1 style="margin:0;color:white;font-size:24px;">📅 New Session Booked</h1>
+              </td></tr>
+              <tr><td style="padding:40px;">
+                <p style="font-size:16px;color:#333;">Hi ${counsellorName},</p>
+                <p style="font-size:16px;color:#333;">A new session has been booked for you.</p>
+                <table width="100%" cellspacing="0" cellpadding="0" style="background:#f9f9f9;border-radius:8px;margin:20px 0;">
+                  <tr><td style="padding:24px;">
+                    <table width="100%" cellspacing="0" cellpadding="0">
+                      <tr><td style="padding:8px 0;font-size:14px;color:#666;">Client</td><td style="padding:8px 0;font-size:14px;color:#333;font-weight:bold;text-align:right;">${booking.clientName}</td></tr>
+                      <tr><td style="padding:8px 0;font-size:14px;color:#666;">Date</td><td style="padding:8px 0;font-size:14px;color:#333;font-weight:bold;text-align:right;">${dateStr}</td></tr>
+                      <tr><td style="padding:8px 0;font-size:14px;color:#666;">Time</td><td style="padding:8px 0;font-size:14px;color:#333;font-weight:bold;text-align:right;">${timeStr}</td></tr>
+                      ${booking.roomName ? `<tr><td style="padding:8px 0;font-size:14px;color:#666;">Room</td><td style="padding:8px 0;font-size:14px;color:#333;font-weight:bold;text-align:right;">${booking.roomName}</td></tr>` : ''}
+                      <tr><td style="padding:8px 0;font-size:14px;color:#666;">Type</td><td style="padding:8px 0;font-size:14px;color:#333;font-weight:bold;text-align:right;">${booking.sessionType}</td></tr>
+                    </table>
+                  </td></tr>
+                </table>
+                <table cellspacing="0" cellpadding="0" width="100%"><tr><td align="center" style="padding:20px 0;">
+                  <a href="${bookingUrl}" style="display:inline-block;padding:16px 32px;background:rgb(82,112,82);color:white;text-decoration:none;border-radius:8px;font-weight:bold;">View Booking</a>
+                </td></tr></table>
+              </td></tr>
+            </table>
+          </td></tr></table>
+        </body></html>
+      `,
+    })
+    return { success: true }
+  } catch (error) {
+    console.error('Error sending counsellor booking confirmation email:', error)
+    return { success: false, error }
+  }
+}
+
+/**
+ * Notify either party (client or counsellor) that a session has been rescheduled
+ */
+export async function sendBookingRescheduledEmail(
+  email: string,
+  recipientName: string,
+  booking: {
+    id: string
+    clientName: string
+    counsellorName: string
+    newStartTime: Date
+    newEndTime: Date
+    oldStartTime: Date
+    roomName?: string
+  }
+) {
+  const bookingUrl = `${BASE_URL}/counsellor/bookings/${booking.id}`
+  const newStart = new Date(booking.newStartTime)
+  const newEnd = new Date(booking.newEndTime)
+  const oldStart = new Date(booking.oldStartTime)
+  const newDateStr = newStart.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+  const newTimeStr = `${newStart.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} – ${newEnd.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`
+  const oldDateStr = oldStart.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+  const oldTimeStr = oldStart.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: `Session Rescheduled – ${newDateStr}`,
+      html: `
+        <!DOCTYPE html><html><head><meta charset="utf-8"></head>
+        <body style="margin:0;padding:0;font-family:'Segoe UI',sans-serif;background:#f5f5f0;">
+          <table width="100%" cellspacing="0" cellpadding="0"><tr><td align="center" style="padding:40px 20px;">
+            <table width="600" cellspacing="0" cellpadding="0" style="background:white;border-radius:16px;box-shadow:0 4px 6px rgba(0,0,0,.1);">
+              <tr><td style="padding:40px;text-align:center;background:linear-gradient(135deg,rgb(217,117,82),rgb(197,90,56));border-radius:16px 16px 0 0;">
+                <h1 style="margin:0;color:white;font-size:24px;">🔄 Session Rescheduled</h1>
+              </td></tr>
+              <tr><td style="padding:40px;">
+                <p style="font-size:16px;color:#333;">Hi ${recipientName},</p>
+                <p style="font-size:16px;color:#333;">Your counselling session between <strong>${booking.clientName}</strong> and <strong>${booking.counsellorName}</strong> has been rescheduled.</p>
+                <table width="100%" cellspacing="0" cellpadding="0" style="background:#fff5f2;border-radius:8px;margin:16px 0;border:1px solid #fde8df;">
+                  <tr><td style="padding:16px 24px;">
+                    <p style="margin:0 0 4px;font-size:12px;color:#c55a38;font-weight:bold;text-transform:uppercase;">Previously</p>
+                    <p style="margin:0;font-size:14px;color:#999;text-decoration:line-through;">${oldDateStr} at ${oldTimeStr}</p>
+                  </td></tr>
+                </table>
+                <table width="100%" cellspacing="0" cellpadding="0" style="background:#f0fdf4;border-radius:8px;margin:16px 0;border:1px solid #bbf7d0;">
+                  <tr><td style="padding:16px 24px;">
+                    <p style="margin:0 0 4px;font-size:12px;color:#166534;font-weight:bold;text-transform:uppercase;">New Time</p>
+                    <p style="margin:0;font-size:16px;color:#333;font-weight:bold;">${newDateStr}</p>
+                    <p style="margin:4px 0 0;font-size:14px;color:#166534;">${newTimeStr}</p>
+                    ${booking.roomName ? `<p style="margin:4px 0 0;font-size:14px;color:#666;">📍 ${booking.roomName}</p>` : ''}
+                  </td></tr>
+                </table>
+                <table cellspacing="0" cellpadding="0" width="100%"><tr><td align="center" style="padding:20px 0;">
+                  <a href="${bookingUrl}" style="display:inline-block;padding:16px 32px;background:rgb(197,90,56);color:white;text-decoration:none;border-radius:8px;font-weight:bold;">View Details</a>
+                </td></tr></table>
+              </td></tr>
+            </table>
+          </td></tr></table>
+        </body></html>
+      `,
+    })
+    return { success: true }
+  } catch (error) {
+    console.error('Error sending booking rescheduled email:', error)
+    return { success: false, error }
+  }
+}
+
+/**
+ * Notify either party (client or counsellor) that a session has been cancelled
+ */
+export async function sendBookingCancelledEmail(
+  email: string,
+  recipientName: string,
+  booking: {
+    clientName: string
+    counsellorName: string
+    startTime: Date
+    endTime: Date
+    roomName?: string
+  }
+) {
+  const start = new Date(booking.startTime)
+  const end = new Date(booking.endTime)
+  const dateStr = start.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+  const timeStr = `${start.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} – ${end.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`
+
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: `Session Cancelled – ${dateStr}`,
+      html: `
+        <!DOCTYPE html><html><head><meta charset="utf-8"></head>
+        <body style="margin:0;padding:0;font-family:'Segoe UI',sans-serif;background:#f5f5f0;">
+          <table width="100%" cellspacing="0" cellpadding="0"><tr><td align="center" style="padding:40px 20px;">
+            <table width="600" cellspacing="0" cellpadding="0" style="background:white;border-radius:16px;box-shadow:0 4px 6px rgba(0,0,0,.1);">
+              <tr><td style="padding:40px;text-align:center;background:linear-gradient(135deg,rgb(239,68,68),rgb(220,38,38));border-radius:16px 16px 0 0;">
+                <h1 style="margin:0;color:white;font-size:24px;">Session Cancelled</h1>
+              </td></tr>
+              <tr><td style="padding:40px;">
+                <p style="font-size:16px;color:#333;">Hi ${recipientName},</p>
+                <p style="font-size:16px;color:#333;">The following counselling session has been cancelled:</p>
+                <table width="100%" cellspacing="0" cellpadding="0" style="background:#f9f9f9;border-radius:8px;margin:20px 0;">
+                  <tr><td style="padding:24px;">
+                    <table width="100%" cellspacing="0" cellpadding="0">
+                      <tr><td style="padding:8px 0;font-size:14px;color:#666;">Client</td><td style="padding:8px 0;font-size:14px;color:#333;font-weight:bold;text-align:right;">${booking.clientName}</td></tr>
+                      <tr><td style="padding:8px 0;font-size:14px;color:#666;">Counsellor</td><td style="padding:8px 0;font-size:14px;color:#333;font-weight:bold;text-align:right;">${booking.counsellorName}</td></tr>
+                      <tr><td style="padding:8px 0;font-size:14px;color:#666;">Date</td><td style="padding:8px 0;font-size:14px;color:#999;font-weight:bold;text-align:right;text-decoration:line-through;">${dateStr}</td></tr>
+                      <tr><td style="padding:8px 0;font-size:14px;color:#666;">Time</td><td style="padding:8px 0;font-size:14px;color:#999;font-weight:bold;text-align:right;text-decoration:line-through;">${timeStr}</td></tr>
+                      ${booking.roomName ? `<tr><td style="padding:8px 0;font-size:14px;color:#666;">Room</td><td style="padding:8px 0;font-size:14px;color:#999;font-weight:bold;text-align:right;">${booking.roomName}</td></tr>` : ''}
+                    </table>
+                  </td></tr>
+                </table>
+                <p style="font-size:14px;color:#666;">If you need to reschedule, please contact the ${BASE_URL.includes('localhost') ? 'counsellor' : 'platform'} directly.</p>
+              </td></tr>
+              <tr><td style="padding:20px 40px;background:#f9f9f9;border-radius:0 0 16px 16px;text-align:center;">
+                <p style="font-size:12px;color:#999;">© 2026 ${PLATFORM_NAME}. All rights reserved.</p>
+              </td></tr>
+            </table>
+          </td></tr></table>
+        </body></html>
+      `,
+    })
+    return { success: true }
+  } catch (error) {
+    console.error('Error sending booking cancelled email:', error)
+    return { success: false, error }
+  }
+}
