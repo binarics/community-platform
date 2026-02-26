@@ -6,14 +6,21 @@ export const dynamic = 'force-dynamic'
 
 
 export default async function CoursesPage() {
-  const courses = await prisma.course.findMany({
-    where: { status: 'PUBLISHED' },
-    include: {
-      organisation: true,
-      _count: { select: { sessions: true } },
-    },
-    orderBy: { startDate: 'asc' },
-  })
+  let courses: Awaited<ReturnType<typeof prisma.course.findMany<{
+    include: { organisation: true; _count: { select: { sessions: true } } }
+  }>>> = []
+  try {
+    courses = await prisma.course.findMany({
+      where: { status: 'PUBLISHED' },
+      include: {
+        organisation: true,
+        _count: { select: { sessions: true } },
+      },
+      orderBy: { startDate: 'asc' },
+    })
+  } catch {
+    // Database not yet migrated; render page with empty list
+  }
 
   return (
     <div className="min-h-screen bg-cream">
