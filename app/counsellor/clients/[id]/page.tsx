@@ -408,7 +408,7 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
                                   })}
                                 </div>
                                 <div className="text-sm text-charcoal line-clamp-3">
-                                  {note.content}
+                                  {note.subjective || note.objective || note.assessment || note.plan}
                                 </div>
                               </div>
                             ))}
