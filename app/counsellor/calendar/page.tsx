@@ -129,7 +129,7 @@ export default async function CalendarPage({ searchParams }: {
         <div className="card p-8">
           <FullCalendar
             bookings={bookings.map(b => ({ ...b, startTime: b.startTime.toISOString(), endTime: b.endTime.toISOString(), sessionType: b.sessionType ?? '', room: b.room ?? undefined }))}
-            clients={clients}
+            clients={clients.map(c => ({ ...c, name: c.name ?? '' }))}
             rooms={rooms}
             counsellorId={profile?.id || ''}
             isSuperAdmin={session.user.role === 'SUPER_ADMIN'}
