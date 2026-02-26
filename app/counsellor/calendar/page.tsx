@@ -128,7 +128,7 @@ export default async function CalendarPage({ searchParams }: {
         {/* Calendar Component */}
         <div className="card p-8">
           <FullCalendar
-            bookings={bookings.map(b => ({ ...b, startTime: b.startTime.toISOString(), endTime: b.endTime.toISOString(), sessionType: b.sessionType ?? '' }))}
+            bookings={bookings.map(b => ({ ...b, startTime: b.startTime.toISOString(), endTime: b.endTime.toISOString(), sessionType: b.sessionType ?? '', room: b.room ?? undefined }))}
             clients={clients}
             rooms={rooms}
             counsellorId={profile?.id || ''}
