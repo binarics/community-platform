@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Crimson_Pro, DM_Sans } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/Providers'
+import { Analytics } from '@vercel/analytics/next'
 
 const crimsonPro = Crimson_Pro({
   subsets: ['latin'],
@@ -31,6 +32,7 @@ export default function RootLayout({
         <Providers>
           {children}
         </Providers>
+        <Analytics />
       </body>
     </html>
   )
