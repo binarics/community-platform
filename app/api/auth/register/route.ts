@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { sendVerificationEmail } from '@/lib/email'
 import bcrypt from 'bcryptjs'
 import { randomBytes } from 'crypto'
 import { sendVerificationEmail } from '@/lib/email'
@@ -65,7 +66,6 @@ export async function POST(request: Request) {
         id: true,
         name: true,
         email: true,
-        role: true,
       },
     })
 

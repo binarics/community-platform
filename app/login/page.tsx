@@ -9,11 +9,13 @@ export default function LoginPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [unverifiedEmail, setUnverifiedEmail] = useState('')
   const [formData, setFormData] = useState({ email: '', password: '' })
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    setUnverifiedEmail('')
     setLoading(true)
 
     try {
@@ -22,6 +24,12 @@ export default function LoginPage() {
         password: formData.password,
         redirect: false,
       })
+
+      if (result?.error === 'EMAIL_NOT_VERIFIED') {
+        setUnverifiedEmail(formData.email)
+        setLoading(false)
+        return
+      }
 
       if (result?.error) {
         setError('Invalid email or password')
@@ -92,6 +100,21 @@ export default function LoginPage() {
               Sign in to your account to continue
             </p>
           </div>
+
+          {unverifiedEmail && (
+            <div className="mb-5 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm">
+              <p className="font-semibold text-amber-800 mb-1">Email not verified</p>
+              <p className="text-amber-700 mb-3">
+                Please verify your email address before signing in.
+              </p>
+              <Link
+                href={`/verify-email/pending?email=${encodeURIComponent(unverifiedEmail)}`}
+                className="inline-block text-sage-600 hover:text-sage-700 font-semibold underline"
+              >
+                Resend verification email →
+              </Link>
+            </div>
+          )}
 
           {error && (
             <div className="mb-5 p-3.5 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm font-medium">
