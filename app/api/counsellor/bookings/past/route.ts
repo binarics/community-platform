@@ -45,7 +45,10 @@ export async function POST(request: Request) {
         data: {
           bookingId: booking.id,
           counsellorId,
-          content: notes.trim(),
+          subjective: notes.trim(),
+          objective: '',
+          assessment: '',
+          plan: '',
         },
       })
     }

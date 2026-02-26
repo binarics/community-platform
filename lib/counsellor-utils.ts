@@ -203,7 +203,7 @@ export function generateTimeSlots(
   endHour: number = 17,
   intervalMinutes: number = 60
 ): Date[] {
-  const slots: Date[] []
+  const slots: Date[] = []
   const start = new Date(date)
   start.setHours(startHour, 0, 0, 0)
   

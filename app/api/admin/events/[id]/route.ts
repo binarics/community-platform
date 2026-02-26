@@ -35,8 +35,8 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 
     const isSuperAdmin = session.user.role === 'SUPER_ADMIN'
     const isEventOrganiser = event.organiserId === session.user.id
-    const isMasjidAdmin = event.masjid?.admins.length > 0
-    const isMasjidModerator = event.masjid?.moderators.length > 0
+    const isMasjidAdmin = (event.masjid?.admins?.length ?? 0) > 0
+    const isMasjidModerator = (event.masjid?.moderators?.length ?? 0) > 0
 
     if (!isSuperAdmin && !isEventOrganiser && !isMasjidAdmin && !isMasjidModerator) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -157,7 +157,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
 
     const isSuperAdmin = session.user.role === 'SUPER_ADMIN'
     const isEventOrganiser = event.organiserId === session.user.id
-    const isMasjidAdmin = event.masjid?.admins.length > 0
+    const isMasjidAdmin = (event.masjid?.admins?.length ?? 0) > 0
 
     if (!isSuperAdmin && !isEventOrganiser && !isMasjidAdmin) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

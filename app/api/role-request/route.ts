@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import {
+  sendRoleRequestReceivedEmail,
+  sendRoleRequestAdminNotificationEmail,
+} from '@/lib/email'
 
 export async function POST(request: Request) {
   try {
@@ -59,6 +63,32 @@ export async function POST(request: Request) {
         status: 'PENDING',
       },
     })
+
+    // Notify the user their request was received
+    await sendRoleRequestReceivedEmail(
+      session.user.email!,
+      session.user.name || 'there',
+      requestedRole
+    )
+
+    // Notify all super admins
+    const superAdmins = await prisma.user.findMany({
+      where: { role: 'SUPER_ADMIN' },
+      select: { email: true, name: true },
+    })
+    await Promise.all(
+      superAdmins.map((admin) =>
+        sendRoleRequestAdminNotificationEmail(
+          admin.email,
+          admin.name || 'Admin',
+          session.user.name || session.user.email!,
+          session.user.email!,
+          requestedRole,
+          reason,
+          roleRequest.id
+        )
+      )
+    )
 
     return NextResponse.json({
       roleRequest,

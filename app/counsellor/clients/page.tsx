@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { ClientCard } from '@/components/counsellor/ClientCard'
+import { getActiveCounsellorWhere } from '@/lib/counsellor-auth'
 
 export default async function ClientsPage() {
   const session = await getServerSession(authOptions)
@@ -17,9 +18,14 @@ export default async function ClientsPage() {
     where: { userId: session.user.id },
   })
 
-  // If SUPER_ADMIN and no own profile, use first available counsellor profile
-  if (!profile && session.user.role === 'SUPER_ADMIN') {
-    profile = await prisma.counsellorProfile.findFirst()
+  // SUPER_ADMIN: respect the cookie-selected counsellor
+  if (session.user.role === 'SUPER_ADMIN') {
+    const where = await getActiveCounsellorWhere(session.user.id, session.user.role)
+    if (where) {
+      profile = await prisma.counsellorProfile.findFirst({ where })
+    } else if (!profile) {
+      profile = await prisma.counsellorProfile.findFirst()
+    }
   }
 
   if (!profile) {
@@ -112,36 +118,8 @@ export default async function ClientsPage() {
                 initial consultation session.
               </p>
             </div>
-          </>
+          </div>
         )}
-
-        {/* Stats Cards */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Total Clients</div>
-            <div className="font-display text-4xl font-bold text-charcoal">{clients.length}</div>
-          </div>
-
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Active Clients</div>
-            <div className="font-display text-4xl font-bold text-green-600">{activeClients}</div>
-            <div className="text-sm text-slate">with upcoming sessions</div>
-          </div>
-
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Total Sessions</div>
-            <div className="font-display text-4xl font-bold text-sage-600">{totalSessions}</div>
-            <div className="text-sm text-slate">all time</div>
-          </div>
-
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Consultations Due</div>
-            <div className={`font-display text-4xl font-bold ${pendingConsultations > 0 ? 'text-amber-600' : 'text-charcoal'}`}>
-              {pendingConsultations}
-            </div>
-            <div className="text-sm text-slate">pending or scheduled</div>
-          </div>
-        </div>
 
         {/* Client List */}
         <div className="card p-8">

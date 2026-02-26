@@ -93,7 +93,7 @@ export default async function NewEventPage({ params }: { params: { id: string } 
           <EventForm 
             masjidId={masjid.id} 
             masjidName={masjid.name}
-            organizerId={session.user.id}
+            organiserId={session.user.id}
           />
         </div>
       </div>

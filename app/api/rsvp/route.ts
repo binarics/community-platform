@@ -46,9 +46,9 @@ export async function POST(request: Request) {
     }
 
     // Check if already RSVP'd
-    const existingRSVP = await prisma.rSVP.findUnique({
+    const existingRSVP = await prisma.eventRSVP.findUnique({
       where: {
-        userId_eventId: {
+        eventId_userId: {
           userId: session.user.id,
           eventId: eventId,
         },
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
     }
 
     // Create RSVP
-    const rsvp = await prisma.rSVP.create({
+    const rsvp = await prisma.eventRSVP.create({
       data: {
         userId: session.user.id,
         eventId: eventId,
@@ -103,9 +103,9 @@ export async function DELETE(request: Request) {
     }
 
     // Delete RSVP
-    await prisma.rSVP.delete({
+    await prisma.eventRSVP.delete({
       where: {
-        userId_eventId: {
+        eventId_userId: {
           userId: session.user.id,
           eventId: eventId,
         },
@@ -144,9 +144,9 @@ export async function GET(request: Request) {
     }
 
     // Check if user has RSVP'd
-    const rsvp = await prisma.rSVP.findUnique({
+    const rsvp = await prisma.eventRSVP.findUnique({
       where: {
-        userId_eventId: {
+        eventId_userId: {
           userId: session.user.id,
           eventId: eventId,
         },

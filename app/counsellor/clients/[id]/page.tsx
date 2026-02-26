@@ -3,6 +3,7 @@ import { authOptions } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
+import { getActiveCounsellorWhere } from '@/lib/counsellor-auth'
 
 export default async function ClientProfilePage({ params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions)
@@ -15,9 +16,14 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
     where: { userId: session.user.id },
   })
 
-  // If SUPER_ADMIN and no own profile, use first available counsellor profile
-  if (!profile && session.user.role === 'SUPER_ADMIN') {
-    profile = await prisma.counsellorProfile.findFirst()
+  // SUPER_ADMIN: respect the cookie-selected counsellor
+  if (session.user.role === 'SUPER_ADMIN') {
+    const where = await getActiveCounsellorWhere(session.user.id, session.user.role)
+    if (where) {
+      profile = await prisma.counsellorProfile.findFirst({ where })
+    } else if (!profile) {
+      profile = await prisma.counsellorProfile.findFirst()
+    }
   }
 
   if (!profile) {
@@ -172,7 +178,7 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
                         <div>
                           <span className="font-semibold">Room: </span>
                           {consultationBooking.room.name}
-                        </>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -223,28 +229,6 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
                 View Booking →
               </Link>
             )}
-          </div>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Total Sessions</div>
-            <div className="font-display text-4xl font-bold text-charcoal">{totalSessions}</div>
-          </div>
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Completed</div>
-            <div className="font-display text-4xl font-bold text-green-600">{completedSessions}</div>
-          </div>
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Upcoming</div>
-            <div className="font-display text-4xl font-bold text-sage-600">{upcomingSessions}</div>
-          </div>
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Avg Rating</div>
-            <div className="font-display text-4xl font-bold text-charcoal">
-              {avgRating ? `${avgRating}/5` : 'N/A'}
-            </div>
           </div>
         </div>
 
@@ -424,7 +408,7 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
                                   })}
                                 </div>
                                 <div className="text-sm text-charcoal line-clamp-3">
-                                  {note.content}
+                                  {note.subjective || note.objective || note.assessment || note.plan}
                                 </div>
                               </div>
                             ))}
@@ -457,39 +441,6 @@ export default async function ClientProfilePage({ params }: { params: { id: stri
           )}
         </div>
 
-        {/* Summary Section */}
-        {totalNotes > 0 && (
-          <div className="card p-6 mt-8">
-            <h3 className="font-display text-xl font-bold text-charcoal mb-4">Clinical Summary</h3>
-            <div className="grid md:grid-cols-3 gap-6 text-sm">
-              <div>
-                <div className="text-xs font-semibold uppercase text-slate mb-1">
-                  Total Clinical Notes
-                </div>
-                <div className="font-display text-2xl font-bold text-charcoal">{totalNotes}</div>
-              </div>
-              <div>
-                <div className="text-xs font-semibold uppercase text-slate mb-1">
-                  Sessions with Feedback
-                </div>
-                <div className="font-display text-2xl font-bold text-charcoal">
-                  {sessionsWithFeedback.length}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs font-semibold uppercase text-slate mb-1">Last Session</div>
-                <div className="text-charcoal">
-                  {regularSessions[0] &&
-                    new Date(regularSessions[0].startTime).toLocaleDateString('en-GB', {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric',
-                    })}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </>
   )

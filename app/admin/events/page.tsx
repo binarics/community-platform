@@ -87,30 +87,6 @@ export default async function AdminEventsPage({ searchParams }: {
           </p>
         </div>
 
-        {/* Stats */}
-        <div className="grid md:grid-cols-5 gap-6 mb-8">
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Total</div>
-            <div className="font-display text-4xl font-bold text-charcoal">{stats.total}</div>
-          </div>
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Pending</div>
-            <div className="font-display text-4xl font-bold text-amber-600">{stats.pending}</div>
-          </div>
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Approved</div>
-            <div className="font-display text-4xl font-bold text-green-600">{stats.approved}</div>
-          </div>
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Draft</div>
-            <div className="font-display text-4xl font-bold text-slate">{stats.draft}</div>
-          </div>
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Rejected</div>
-            <div className="font-display text-4xl font-bold text-red-600">{stats.rejected}</div>
-          </div>
-        </div>
-
         {/* Filters */}
         <div className="card p-6 mb-8">
           <form method="get" className="flex gap-4">
@@ -170,7 +146,7 @@ export default async function AdminEventsPage({ searchParams }: {
                 No Events Found
               </h3>
               <p className="text-slate">Try adjusting your filters</p>
-            </>
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">

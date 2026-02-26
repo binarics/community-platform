@@ -4,6 +4,7 @@ import { redirect, notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { SessionNoteCard } from '@/components/counsellor/SessionNoteCard'
+import { getActiveCounsellorWhere } from '@/lib/counsellor-auth'
 
 export default async function ClientNotesPage({ params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions)
@@ -16,9 +17,14 @@ export default async function ClientNotesPage({ params }: { params: { id: string
     where: { userId: session.user.id },
   })
 
-  // If SUPER_ADMIN and no own profile, use first available counsellor profile
-  if (!profile && session.user.role === 'SUPER_ADMIN') {
-    profile = await prisma.counsellorProfile.findFirst()
+  // SUPER_ADMIN: respect the cookie-selected counsellor
+  if (session.user.role === 'SUPER_ADMIN') {
+    const where = await getActiveCounsellorWhere(session.user.id, session.user.role)
+    if (where) {
+      profile = await prisma.counsellorProfile.findFirst({ where })
+    } else if (!profile) {
+      profile = await prisma.counsellorProfile.findFirst()
+    }
   }
 
   if (!profile) {
@@ -86,28 +92,6 @@ export default async function ClientNotesPage({ params }: { params: { id: string
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Total Notes</div>
-            <div className="font-display text-4xl font-bold text-charcoal">{totalNotes}</div>
-          </div>
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">
-              Sessions with Notes
-            </div>
-            <div className="font-display text-4xl font-bold text-sage-600">
-              {notesWithSessions.length}
-            </div>
-          </div>
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Total Sessions</div>
-            <div className="font-display text-4xl font-bold text-slate">
-              {client.clientBookings.length}
-            </div>
-          </div>
-        </div>
-
         {/* SOAP Guide */}
         <div className="card p-6 mb-8 bg-sage-50 border border-sage-100">
           <div className="flex items-start gap-3">
@@ -152,7 +136,7 @@ export default async function ClientNotesPage({ params }: { params: { id: string
               >
                 View Client Sessions
               </Link>
-            </>
+            </div>
           ) : (
             <div className="space-y-8">
               {notesWithSessions.map(({ booking, notes }) => (
@@ -206,7 +190,7 @@ export default async function ClientNotesPage({ params }: { params: { id: string
                     {notes.map((note, index) => (
                       <SessionNoteCard
                         key={note.id}
-                        note={note}
+                        note={{ ...note, content: null }}
                         bookingId={booking.id}
                         isLatest={index === 0}
                       />

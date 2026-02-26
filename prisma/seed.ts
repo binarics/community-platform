@@ -130,11 +130,11 @@ async function main() {
   })
 
   // Create RSVPs
-  await prisma.rSVP.create({
+  await prisma.eventRSVP.create({
     data: {
       userId: member.id,
       eventId: event1.id,
-      status: 'CONFIRMED',
+      status: 'ATTENDING',
     },
   })
 

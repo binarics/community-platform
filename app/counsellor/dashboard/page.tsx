@@ -3,6 +3,7 @@ import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
+import { getActiveCounsellorWhere } from '@/lib/counsellor-auth'
 
 export default async function CounsellorDashboardPage() {
   const session = await getServerSession(authOptions)
@@ -23,12 +24,12 @@ export default async function CounsellorDashboardPage() {
     },
   })
 
-  // If SUPER_ADMIN and no profile, get first counsellor profile for demo
-  if (!counsellorProfile && session.user.role === 'SUPER_ADMIN') {
+  // SUPER_ADMIN: respect the cookie-selected counsellor
+  if (session.user.role === 'SUPER_ADMIN') {
+    const where = await getActiveCounsellorWhere(session.user.id, session.user.role)
     counsellorProfile = await prisma.counsellorProfile.findFirst({
-      include: {
-        user: true,
-      },
+      where: where ?? undefined,
+      include: { user: true },
     })
   }
 
@@ -178,57 +179,6 @@ export default async function CounsellorDashboardPage() {
                   <span>Pending Verification</span>
                 </span>
               )}
-            </div>
-          </div>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid md:grid-cols-4 gap-6 mb-12">
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase tracking-wide text-slate mb-2">
-              Today&apos;s Sessions
-            </div>
-            <div className="font-display text-4xl font-bold text-charcoal mb-1">
-              {todayBookings.length}
-            </div>
-            <div className="text-sm text-sage-500">
-              {todayBookings.filter((b) => b.status === 'COMPLETED').length} completed
-            </div>
-          </div>
-
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase tracking-wide text-slate mb-2">
-              Active Clients
-            </div>
-            <div className="font-display text-4xl font-bold text-charcoal mb-1">
-              {activeClients}
-            </div>
-            <div className="text-sm text-sage-500">
-              <Link href="/counsellor/clients" className="hover:text-sage-600 hover:underline">
-                View all clients →
-              </Link>
-            </div>
-          </div>
-
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase tracking-wide text-slate mb-2">
-              Total Sessions
-            </div>
-            <div className="font-display text-4xl font-bold text-charcoal mb-1">
-              {stats._count}
-            </div>
-            <div className="text-sm text-sage-500">{completedSessions} completed</div>
-          </div>
-
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase tracking-wide text-slate mb-2">
-              Pending Payment
-            </div>
-            <div className="font-display text-4xl font-bold text-charcoal mb-1">
-              {unpaidBookings}
-            </div>
-            <div className="text-sm text-terracotta-500">
-              {unpaidBookings > 0 ? 'Requires attention' : 'All settled'}
             </div>
           </div>
         </div>

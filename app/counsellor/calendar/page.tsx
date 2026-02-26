@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { FullCalendar } from '@/components/counsellor/FullCalendar'
 import Link from 'next/link'
+import { getActiveCounsellorWhere } from '@/lib/counsellor-auth'
 
 export default async function CalendarPage({ searchParams }: { 
   searchParams: { view?: string, date?: string } 
@@ -19,9 +20,14 @@ export default async function CalendarPage({ searchParams }: {
     where: { userId: session.user.id },
   })
 
-  // If SUPER_ADMIN and no own profile, use first available counsellor profile
-  if (!profile && session.user.role === 'SUPER_ADMIN') {
-    profile = await prisma.counsellorProfile.findFirst()
+  // SUPER_ADMIN: respect the cookie-selected counsellor
+  if (session.user.role === 'SUPER_ADMIN') {
+    const where = await getActiveCounsellorWhere(session.user.id, session.user.role)
+    if (where) {
+      profile = await prisma.counsellorProfile.findFirst({ where })
+    } else if (!profile) {
+      profile = await prisma.counsellorProfile.findFirst()
+    }
   }
 
   if (!profile) {
@@ -118,69 +124,15 @@ export default async function CalendarPage({ searchParams }: {
           </div>
         </div>
 
-        {/* Stats Row */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">
-              This Week
-            </div>
-            <div className="font-display text-4xl font-bold text-charcoal">
-              {bookings.filter(b => {
-                const bookingDate = new Date(b.startTime)
-                const weekStart = new Date()
-                weekStart.setDate(weekStart.getDate() - weekStart.getDay())
-                const weekEnd = new Date(weekStart)
-                weekEnd.setDate(weekEnd.getDate() + 7)
-                return bookingDate >= weekStart && bookingDate < weekEnd
-              }).length}
-            </div>
-            <div className="text-sm text-slate">sessions</div>
-          </div>
-
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">
-              This Month
-            </div>
-            <div className="font-display text-4xl font-bold text-charcoal">
-              {bookings.filter(b => {
-                const bookingDate = new Date(b.startTime)
-                return bookingDate.getMonth() === currentDate.getMonth() &&
-                       bookingDate.getFullYear() === currentDate.getFullYear()
-              }).length}
-            </div>
-            <div className="text-sm text-slate">sessions</div>
-          </div>
-
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">
-              Upcoming
-            </div>
-            <div className="font-display text-4xl font-bold text-charcoal">
-              {bookings.filter(b => 
-                new Date(b.startTime) > new Date() && b.status === 'SCHEDULED'
-              ).length}
-            </div>
-            <div className="text-sm text-sage-600">scheduled</div>
-          </div>
-
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">
-              Availability
-            </div>
-            <div className="font-display text-2xl font-bold text-charcoal mb-1">
-              {availability ? Object.values(availability).filter((d: any) => d.enabled).length : 0}
-            </div>
-            <div className="text-sm text-slate">days/week</div>
-          </div>
-        </div>
 
         {/* Calendar Component */}
         <div className="card p-8">
           <FullCalendar
-            bookings={bookings}
-            clients={clients}
+            bookings={bookings.map(b => ({ ...b, startTime: b.startTime.toISOString(), endTime: b.endTime.toISOString(), sessionType: b.sessionType ?? '', room: b.room ?? undefined }))}
+            clients={clients.map(c => ({ ...c, name: c.name ?? '' }))}
             rooms={rooms}
             counsellorId={profile?.id || ''}
+            isSuperAdmin={session.user.role === 'SUPER_ADMIN'}
             initialView={searchParams.view || 'month'}
             initialDate={searchParams.date}
             availability={availability}

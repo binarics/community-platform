@@ -90,31 +90,6 @@ export default async function AdminBookingsPage({
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid md:grid-cols-5 gap-4 mb-8">
-          <div className="card p-5">
-            <div className="text-xs font-semibold uppercase text-slate mb-1">Total</div>
-            <div className="font-display text-3xl font-bold text-charcoal">{resolvedCounts.all}</div>
-          </div>
-          <div className="card p-5">
-            <div className="text-xs font-semibold uppercase text-slate mb-1">Scheduled</div>
-            <div className="font-display text-3xl font-bold text-blue-600">{resolvedCounts.scheduled}</div>
-          </div>
-          <div className="card p-5">
-            <div className="text-xs font-semibold uppercase text-slate mb-1">Completed</div>
-            <div className="font-display text-3xl font-bold text-green-600">{resolvedCounts.completed}</div>
-          </div>
-          <div className="card p-5">
-            <div className="text-xs font-semibold uppercase text-slate mb-1">Cancelled</div>
-            <div className="font-display text-3xl font-bold text-red-500">{resolvedCounts.cancelled}</div>
-          </div>
-          <div className="card p-5">
-            <div className="text-xs font-semibold uppercase text-slate mb-1">Unpaid</div>
-            <div className="font-display text-3xl font-bold text-amber-600">{resolvedCounts.unpaid}</div>
-            <div className="text-xs text-slate">completed sessions</div>
-          </div>
-        </div>
-
         {/* Filters */}
         <div className="card p-6 mb-6">
           <form method="get" className="flex flex-wrap gap-4">
@@ -159,7 +134,7 @@ export default async function AdminBookingsPage({
             <div className="text-6xl mb-4">🗓️</div>
             <h3 className="font-display text-2xl font-bold text-charcoal mb-2">No Bookings Found</h3>
             <p className="text-slate">Try adjusting your filters</p>
-          </>
+          </div>
         ) : (
           <>
             <div className="mb-4 text-sm text-slate">

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { sendRoleRequestRejectedEmail } from '@/lib/email'
 
 export async function POST(
   request: Request,
@@ -24,9 +25,10 @@ export async function POST(
       )
     }
 
-    // Get the role request
+    // Get the role request (include user for email notification)
     const roleRequest = await prisma.roleRequest.findUnique({
       where: { id: params.id },
+      include: { user: true },
     })
 
     if (!roleRequest) {
@@ -50,6 +52,14 @@ export async function POST(
         reviewNotes,
       },
     })
+
+    // Email the user with the outcome and reason
+    await sendRoleRequestRejectedEmail(
+      roleRequest.user.email,
+      roleRequest.user.name || 'there',
+      roleRequest.requestedRole,
+      reviewNotes
+    )
 
     return NextResponse.json({
       message: 'Role request rejected',

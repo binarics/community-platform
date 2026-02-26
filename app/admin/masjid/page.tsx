@@ -45,42 +45,6 @@ export default async function AdminMasjidPage() {
           </Link>
         </div>
 
-        {/* Stats */}
-        <div className="grid md:grid-cols-4 gap-6 mb-12">
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">
-              Total Masjids
-            </div>
-            <div className="font-display text-4xl font-bold text-charcoal">
-              {masjids.length}
-            </div>
-          </div>
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">
-              Active
-            </div>
-            <div className="font-display text-4xl font-bold text-green-600">
-              {masjids.filter((m) => m.isActive).length}
-            </div>
-          </div>
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">
-              Public
-            </div>
-            <div className="font-display text-4xl font-bold text-sage-600">
-              {masjids.filter((m) => m.isPublic).length}
-            </div>
-          </div>
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">
-              With Events
-            </div>
-            <div className="font-display text-4xl font-bold text-terracotta-600">
-              {masjids.filter((m) => m._count.events > 0).length}
-            </div>
-          </div>
-        </div>
-
         {/* Masjids List */}
         <div className="space-y-4">
           {masjids.map((masjid) => (
@@ -156,7 +120,7 @@ export default async function AdminMasjidPage() {
             <Link href="/admin/masjid/new" className="btn btn-primary inline-flex">
               Create First Masjid
             </Link>
-          </>
+          </div>
         )}
       </div>
     </>

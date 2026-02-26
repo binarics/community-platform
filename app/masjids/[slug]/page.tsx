@@ -79,39 +79,6 @@ export default async function MasjidDetailPage({ params }: { params: { slug: str
             </div>
           </div>
 
-          {/* Stats Row */}
-          <div className="grid grid-cols-3 gap-6 mt-6 pt-6 border-t border-sage-100">
-            <div className="text-center">
-              <div className="font-display text-3xl font-bold text-charcoal mb-1">
-                {masjid._count.events}
-              </div>
-              <div className="text-sm text-slate">Upcoming Events</div>
-            </div>
-            <div className="text-center">
-              <div className="font-display text-3xl font-bold text-charcoal mb-1">
-                {masjid._count.members}
-              </div>
-              <div className="text-sm text-slate">Members</div>
-            </div>
-            <div className="text-center">
-              {masjid.capacity ? (
-                <>
-                  <div className="font-display text-3xl font-bold text-charcoal mb-1">
-                    {masjid.capacity}
-                  </div>
-                  <div className="text-sm text-slate">Capacity</div>
-                </>
-              ) : (
-                <>
-                  <div className="font-display text-3xl font-bold text-sage-500 mb-1">
-                    ✓
-                  </div>
-                  <div className="text-sm text-slate">Active</div>
-                </>
-              )}
-            </div>
-          </div>
-
           {/* Contact & Social */}
           <div className="flex gap-4 mt-6 pt-6 border-t border-sage-100">
             {masjid.website && (

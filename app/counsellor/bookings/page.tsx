@@ -3,6 +3,7 @@ import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
+import { getActiveCounsellorWhere } from '@/lib/counsellor-auth'
 
 const STATUS_STYLES: Record<string, string> = {
   SCHEDULED: 'bg-blue-100 text-blue-700',
@@ -33,8 +34,14 @@ export default async function CounsellorBookingsPage({
     where: { userId: session.user.id },
   })
 
-  if (!profile && session.user.role === 'SUPER_ADMIN') {
-    profile = await prisma.counsellorProfile.findFirst()
+  // SUPER_ADMIN: respect the cookie-selected counsellor
+  if (session.user.role === 'SUPER_ADMIN') {
+    const where = await getActiveCounsellorWhere(session.user.id, session.user.role)
+    if (where) {
+      profile = await prisma.counsellorProfile.findFirst({ where })
+    } else if (!profile) {
+      profile = await prisma.counsellorProfile.findFirst()
+    }
   }
 
   if (!profile) {
@@ -87,27 +94,6 @@ export default async function CounsellorBookingsPage({
           <Link href="/counsellor/bookings/new" className="btn btn-primary">
             + New Booking
           </Link>
-        </div>
-
-        {/* Stats */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Total</div>
-            <div className="font-display text-4xl font-bold text-charcoal">{counts.all}</div>
-          </div>
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Scheduled</div>
-            <div className="font-display text-4xl font-bold text-blue-600">{counts.scheduled}</div>
-          </div>
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Completed</div>
-            <div className="font-display text-4xl font-bold text-green-600">{counts.completed}</div>
-          </div>
-          <div className="card p-6">
-            <div className="text-sm font-semibold uppercase text-slate mb-2">Unpaid</div>
-            <div className="font-display text-4xl font-bold text-amber-600">{counts.unpaid}</div>
-            <div className="text-sm text-slate">completed sessions</div>
-          </div>
         </div>
 
         {/* Filters */}
@@ -167,7 +153,7 @@ export default async function CounsellorBookingsPage({
             <Link href="/counsellor/bookings/new" className="btn btn-primary">
               Schedule a Session
             </Link>
-          </>
+          </div>
         ) : (
           <div className="card overflow-hidden">
             <table className="w-full">
