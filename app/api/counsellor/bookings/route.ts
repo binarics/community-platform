@@ -176,7 +176,7 @@ export async function POST(request: Request) {
       startTime: booking.startTime,
       endTime: booking.endTime,
       roomName: booking.room?.name,
-      sessionType: booking.sessionType,
+      sessionType: booking.sessionType ?? 'Standard',
     }
     await Promise.all([
       sendBookingConfirmationEmail(booking.client.email, booking.client.name || 'there', emailPayload),
