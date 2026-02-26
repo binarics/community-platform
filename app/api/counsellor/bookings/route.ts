@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { sendBookingConfirmationEmail, sendCounsellorBookingConfirmationEmail } from '@/lib/email'
 
 // GET - List all bookings for this counsellor
 export async function GET(request: Request) {
@@ -157,20 +158,34 @@ export async function POST(request: Request) {
       },
       include: {
         client: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
+          select: { id: true, name: true, email: true },
         },
         room: {
-          select: {
-            id: true,
-            name: true,
-          },
+          select: { id: true, name: true },
+        },
+        counsellor: {
+          include: { user: { select: { name: true, email: true } } },
         },
       },
     })
+
+    // Send confirmation emails to both parties (non-blocking)
+    const emailPayload = {
+      id: booking.id,
+      counsellorName: booking.counsellor.user.name || 'Your Counsellor',
+      startTime: booking.startTime,
+      endTime: booking.endTime,
+      roomName: booking.room?.name,
+      sessionType: booking.sessionType,
+    }
+    await Promise.all([
+      sendBookingConfirmationEmail(booking.client.email, booking.client.name || 'there', emailPayload),
+      sendCounsellorBookingConfirmationEmail(
+        booking.counsellor.user.email,
+        booking.counsellor.user.name || 'there',
+        { ...emailPayload, clientName: booking.client.name || 'Client' }
+      ),
+    ])
 
     return NextResponse.json({ booking, message: 'Booking created successfully' })
   } catch (error) {
