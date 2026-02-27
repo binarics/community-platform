@@ -1,11 +1,18 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendBookingReminderEmail } from '@/lib/email'
+import { validateApiKey } from '@/lib/api-key'
 
 export async function GET(request: Request) {
-  const authHeader = request.headers.get('authorization')
+  const authHeader = request.headers.get('authorization') ?? ''
+
+  // Accept either the env-level CRON_SECRET (used by Vercel's scheduler)
+  // or a database-backed rolling API key issued from the admin panel.
   const cronSecret = process.env.CRON_SECRET
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  const validCronSecret = !!cronSecret && authHeader === `Bearer ${cronSecret}`
+  const validApiKey = !validCronSecret && (await validateApiKey(authHeader))
+
+  if (!validCronSecret && !validApiKey) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   try {

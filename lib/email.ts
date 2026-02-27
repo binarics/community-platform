@@ -1006,3 +1006,87 @@ export async function sendBookingCancelledEmail(
     return { success: false, error }
   }
 }
+
+/**
+ * Notify super admins that an API key was automatically rotated.
+ * The new plaintext key is included in the email — it is not stored anywhere.
+ * Recipients have GRACE_HOURS to update any systems that use the old key.
+ */
+export async function sendApiKeyRotationEmail(
+  adminEmail: string,
+  adminName: string,
+  keyName: string,
+  newKey: string,
+  newPrefix: string,
+  graceHours: number = 24,
+) {
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: adminEmail,
+      subject: `[${PLATFORM_NAME}] API Key Auto-Rotated: ${keyName}`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+          <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+          <body style="margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background-color:#f5f5f0;">
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+              <tr>
+                <td align="center" style="padding:40px 20px;">
+                  <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0"
+                    style="background-color:white;border-radius:16px;box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+                    <tr>
+                      <td style="padding:40px 40px 20px;text-align:center;background:linear-gradient(135deg,rgb(82,112,82) 0%,rgb(61,90,61) 100%);border-radius:16px 16px 0 0;">
+                        <h1 style="margin:0;color:white;font-size:24px;font-weight:bold;">API Key Rotated</h1>
+                        <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">${PLATFORM_NAME} · Automated Security Rotation</p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding:32px 40px;">
+                        <p style="color:#374151;font-size:15px;">Hi ${adminName},</p>
+                        <p style="color:#374151;font-size:15px;">
+                          The API key <strong>"${keyName}"</strong> has been automatically rotated as scheduled.
+                          The <strong>old key remains valid for ${graceHours} hours</strong> to give you time to update any systems that depend on it.
+                        </p>
+
+                        <div style="background:#f0f7f0;border:1px solid #86a87e;border-radius:12px;padding:20px 24px;margin:24px 0;">
+                          <p style="margin:0 0 8px;font-size:13px;color:#4a7c59;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">
+                            New API Key — copy now, not stored anywhere else
+                          </p>
+                          <code style="display:block;background:#fff;border:1px solid #c9dfc5;border-radius:8px;padding:12px 16px;font-size:13px;font-family:monospace;color:#1a2e1a;word-break:break-all;letter-spacing:0.02em;">
+                            ${newKey}
+                          </code>
+                          <p style="margin:8px 0 0;font-size:12px;color:#6b7280;">Prefix: ${newPrefix}…</p>
+                        </div>
+
+                        <div style="background:#fffbeb;border:1px solid #f59e0b;border-radius:8px;padding:16px 20px;margin:0 0 24px;">
+                          <p style="margin:0;font-size:13px;color:#92400e;">
+                            <strong>Action required:</strong> Update any integrations, services, or environment variables using this key within ${graceHours} hours. After that, the old key will be rejected.
+                          </p>
+                        </div>
+
+                        <p style="color:#374151;font-size:14px;">You can view and manage all API keys in the
+                          <a href="${BASE_URL}/admin/api-keys" style="color:#4a7c59;font-weight:600;">Admin Panel → API Keys</a>.
+                        </p>
+                        <p style="color:#6b7280;font-size:13px;margin-top:24px;">This is an automated security notification. No action was taken by any user.</p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding:20px 40px;background:#f9fafb;border-radius:0 0 16px 16px;border-top:1px solid #e5e7eb;">
+                        <p style="margin:0;color:#9ca3af;font-size:12px;text-align:center;">${PLATFORM_NAME} · Automated key rotation</p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+        </html>
+      `,
+    })
+    return { success: true }
+  } catch (error) {
+    console.error('Error sending API key rotation email:', error)
+    return { success: false, error }
+  }
+}
