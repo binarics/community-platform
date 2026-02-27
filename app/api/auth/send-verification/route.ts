@@ -17,15 +17,12 @@ export async function POST(request: Request) {
       where: { email },
     })
 
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
-
-    if (user.emailVerified) {
-      return NextResponse.json(
-        { error: 'Email already verified' },
-        { status: 400 }
-      )
+    // Return the same generic response whether the email exists or not,
+    // to prevent account enumeration.
+    if (!user || user.emailVerified) {
+      return NextResponse.json({
+        message: 'If an account exists with that email and requires verification, a link has been sent.',
+      })
     }
 
     // Generate verification token
