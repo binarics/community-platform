@@ -7,7 +7,7 @@ export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session || session.user.role !== 'COUNSELLOR') {
+    if (!session || !['COUNSELLOR', 'SUPER_ADMIN'].includes(session.user.role)) {
       return NextResponse.json(
         { error: 'Unauthorized - Must be a counsellor' },
         { status: 401 }
@@ -16,7 +16,6 @@ export async function POST(request: Request) {
 
     const body = await request.json()
     const {
-      userId,
       bio,
       specializations,
       hourlyRate,
@@ -26,6 +25,13 @@ export async function POST(request: Request) {
       organisationId,
       availability,
     } = body
+
+    // COUNSELLOR can only create their own profile.
+    // SUPER_ADMIN may specify a userId; defaults to their own if omitted.
+    const userId =
+      session.user.role === 'SUPER_ADMIN' && body.userId
+        ? body.userId
+        : session.user.id
 
     // Validation
     if (!bio || bio.length < 50) {
