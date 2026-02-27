@@ -479,8 +479,13 @@ model ApiKey {
   expiresAt   DateTime?
   revokedAt   DateTime?          // Set to now+24h on roll (grace window); null = not revoked
   lastUsedAt  DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+
+  // Auto-rotation: if set, the cron job rotates the key every N days automatically
+  rotationIntervalDays Int?
+  lastRotatedAt        DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([keyHash])
 }

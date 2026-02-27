@@ -20,6 +20,8 @@ export async function GET() {
       expiresAt: true,
       revokedAt: true,
       lastUsedAt: true,
+      lastRotatedAt: true,
+      rotationIntervalDays: true,
       createdAt: true,
       createdBy: { select: { name: true, email: true } },
     },
@@ -34,7 +36,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const { name, expiresInDays } = await request.json()
+  const { name, expiresInDays, rotationIntervalDays } = await request.json()
   if (!name?.trim()) {
     return NextResponse.json({ error: 'Name is required' }, { status: 400 })
   }
@@ -53,6 +55,7 @@ export async function POST(request: Request) {
       keyPrefix: prefix,
       createdById: session.user.id,
       expiresAt,
+      rotationIntervalDays: rotationIntervalDays ?? null,
     },
   })
 
