@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 interface TeamMember {
   id: string
   userId: string
-  assignedAt: string
+  assignedAt: Date | string
   user: { id: string; name: string | null; email: string | null }
 }
 
