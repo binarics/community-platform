@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 interface Member {
   id: string
   userId: string
-  joinedAt: string
+  joinedAt: Date | string
   receiveNotifications: boolean
   favorited: boolean
   staffRole: string | null
@@ -14,7 +14,7 @@ interface Member {
     id: string
     name: string | null
     email: string | null
-    createdAt: string
+    createdAt: Date | string
   }
 }
 
