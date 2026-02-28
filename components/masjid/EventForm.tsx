@@ -7,9 +7,10 @@ interface EventFormProps {
   masjidId: string
   masjidName: string
   organiserId: string
+  successRedirect?: string
 }
 
-export function EventForm({ masjidId, masjidName, organiserId }: EventFormProps) {
+export function EventForm({ masjidId, masjidName, organiserId, successRedirect }: EventFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -54,8 +55,7 @@ export function EventForm({ masjidId, masjidName, organiserId }: EventFormProps)
       })
 
       if (response.ok) {
-        const data = await response.json()
-        router.push(`/admin/masjid/${masjidId}`)
+        router.push(successRedirect ?? `/admin/masjid/${masjidId}`)
       } else {
         const data = await response.json()
         setError(data.error || 'Failed to create event')
