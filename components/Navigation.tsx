@@ -82,10 +82,10 @@ export function Navigation() {
                 <>
                   {session.user.role === 'MASJID_ADMIN' && (
                     <Link
-                      href="/dashboard"
-                      className={`btn btn-outline btn-sm text-xs ${isActive('/dashboard') ? 'bg-sage-50' : ''}`}
+                      href="/masjid/dashboard"
+                      className={`btn btn-outline btn-sm text-xs ${isActive('/masjid') ? 'bg-sage-50' : ''}`}
                     >
-                      Dashboard
+                      Masjid
                     </Link>
                   )}
                   {(session.user.role === 'COUNSELLOR' || session.user.role === 'SUPER_ADMIN') && (
@@ -94,6 +94,14 @@ export function Navigation() {
                       className={`btn btn-outline btn-sm text-xs ${isActive('/counsellor') ? 'bg-sage-50' : ''}`}
                     >
                       Counsellor
+                    </Link>
+                  )}
+                  {session.user.role === 'SUPER_ADMIN' && (
+                    <Link
+                      href="/masjid/dashboard"
+                      className={`btn btn-outline btn-sm text-xs ${isActive('/masjid') ? 'bg-sage-50' : ''}`}
+                    >
+                      Masjid
                     </Link>
                   )}
                   {session.user.role === 'SUPER_ADMIN' && (
@@ -223,8 +231,13 @@ export function Navigation() {
                     </div>
 
                     {session.user.role === 'MASJID_ADMIN' && (
-                      <Link href="/dashboard" className="flex items-center px-3 py-2.5 rounded-xl text-sm font-medium text-charcoal hover:bg-sage-50">
-                        Dashboard
+                      <Link href="/masjid/dashboard" className="flex items-center px-3 py-2.5 rounded-xl text-sm font-medium text-charcoal hover:bg-sage-50">
+                        Masjid Dashboard
+                      </Link>
+                    )}
+                    {session.user.role === 'SUPER_ADMIN' && (
+                      <Link href="/masjid/dashboard" className="flex items-center px-3 py-2.5 rounded-xl text-sm font-medium text-charcoal hover:bg-sage-50">
+                        Masjid Dashboard
                       </Link>
                     )}
                     {(session.user.role === 'COUNSELLOR' || session.user.role === 'SUPER_ADMIN') && (
